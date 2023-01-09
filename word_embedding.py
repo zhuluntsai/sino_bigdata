@@ -1,230 +1,108 @@
-# from gensim.models import word2vec
-from gensim.models import Word2Vec
-import spacy, jieba
-import numpy as np
-import pandas as pd
 import xml.etree.cElementTree as ET
-from ckiptagger import data_utils, construct_dictionary, WS, POS, NER
-from typing import List
 
-def read_xml():
+prefix = '{http://pcstd.pcc.gov.tw/2003/eTender}'
+
+def find_budget(target):
     xml_path = '(空白標單)臺北都會區大眾捷運系統萬大線(第二期工程)-CQ881標土建工程CQ881-11-04_bp_rbid.xml'
-
-    ws = WS("data")
-
     tree = ET.parse(xml_path)
     root = tree.getroot()
 
-    # print('payitem: ', root[0]) 
-    # print('payitem: [0]: ', root[1][0])
+    if target[0] == '' or target[0] == '*':
+        return find_budget_in(target, root)
 
-    text_list = []
-
-    for r in root[1][7]:
-        if 'PayItem' in r.tag:
-            for d in r :
-                if 'Description' in d.tag and '連續壁' in d.text and 'C' in d.text and d.text != '                                                                                                                                                                                                        ':
-                    # print(d.text)
-                    text_list.append(d.text)
-
-    print(text_list)
-    print(ws(text_list))
-
-def get_text(d):
-    if 'unit' in d.attrib:
-        return d.attrib['unit']
-    elif 'Value' in d.tag and 'frame' in d.attrib:
-        return d.attrib['frame'] + ' ' + d.text
-    else:
-        return d.text 
-    
-def get_value(d):
-    if 'unit' in d.attrib:
-        return float(d.text)
-
-def read_knowledge():
-    knowledge_path = '樹狀圖.xml'
-
-    tree = ET.parse(knowledge_path)
-    root = tree.getroot()
-
-    text_dict = {}
-
-    for r in root[3]:
-
-        if 'WorkItem' in r.tag:            
-            workItem = ''
-            for d in r:
-                workItem += get_text(d) + ' '
-
-                # for dd in d.iter():
-                #     print(dd.text.replace('\n', ''))
-            text_dict[workItem.strip()] = get_value(d)
-
-    return text_dict
-
-def read_excel():
-    excel_path = 'CQ881標LG09站地工數量-1100330更新.xls'
-    
-    excel = pd.read_excel(excel_path, sheet_name=None)
-    target = 'Type S1'
-
-    for k in list(excel.keys()):
-        df = excel[k]
-
-        for index, row in df.iterrows():
-            # print(index, row.str())
-            if target in row.values:
-                print(k, row.values)
-
-def get_budget(d):
-    if 'language' in d.attrib and d.attrib == 'zh-TW':
-        return d.text
-    elif 'Value' in d.tag and 'frame' in d.attrib:
-        return d.attrib['frame'] + ' ' + d.text
-    else:
-        return d.text 
-
-def read_budget():
-    xml_path = '(空白標單)臺北都會區大眾捷運系統萬大線(第二期工程)-CQ881標土建工程CQ881-11-04_bp_rbid.xml'
-
-    tree = ET.parse(xml_path)
-    root = tree.getroot()
-
-    text_dict = {}
-    description = ''
-    quantity = ''
-    unit = ''
-
-    for r in root[1]:
-        for d in r:
-
-
-            if 'PayItem' in d.tag:
-                description = ''
-                quantity = ''
-                unit = ''
-
-                for dd in d:
-                    if 'Description' in dd.tag and '連續壁' in dd.text and 'TYPE' in dd.text:
-                        description = dd.text
-                    elif 'Quantity' in dd.tag:
-                        quantity = dd.text
-                    elif 'Unit' in dd.tag:
-                        unit = dd.text
-                    else:
-                        pass
-
-                if description != '' and quantity != '' and unit != '':
-                    print(f'{description}, {quantity}, {unit}')
-
-            # print(d.text)
-
-            # if '明挖覆蓋隧道工程' in d.text:
-            #     print(d)
-            #     for dd in r:
-            #         print(dd.text)
-
-
-            # print(workItem)
-
-            # for dd in d.iter():
-            #     print(dd.text.replace('\n', ''))
-        # text_dict[workItem.strip()] = get_value(d)
-
-    
-    return text_dict
-
-def read_amount_xml():
-    xml_path = '樹狀圖_new.xml'
-
-    tree = ET.parse(xml_path)
-    root = tree.getroot()
-
-    text_dict = {}
-    description = ''
-    quantity = ''
-    unit = ''
-    for r in root:
-        if r.findtext('Description') == '數量計算書':
-            print(r.tag)
-            for d in r:
-                print(d.tag)
-                if d.findtext('Description') == '數量':
-                    print(d.tag)
-
-
-            # if 'PayItem' in d.tag:
-            #     description = ''
-            #     quantity = ''
-            #     unit = ''
-
-
-def get_word_embedding(text: str, model):
-    cut = jieba.lcut(text)
-    cut_item = []
-    word_embeddings = []
-
-    for c in cut:
-        try: 
-            word_embeddings.append(model.wv[c])
-            cut_item.append(c)
-        except:
-            pass
+    if target[0] == 'DetailList':
+        xpath = f"{prefix+target[0]}/{prefix}PayItem/{prefix}PayItem/[{prefix}Description='{target[1]}']/{prefix}Quantity"
         
-    # print('original text: ', text_list[i])
-    # print('word segmentation: ', cut)
-    # print('ws with word embeddings: ', cut_item)
+    elif target[0] == 'CostBreakdownList':
+        xpath = f"{prefix+target[0]}/"
+        for i in range(len(target) - 1):
+            xpath += f"{prefix}WorkItem/[{prefix}Description='{target[i + 1]}']/"
+        xpath += f"{prefix}Quantity"
+
+    return root.find(xpath).text
+
+def find_budget_in(target, root):
+    tag = target.pop(0)
+    keyword = target.pop(-3)
+    front = target.pop(-2) # keyword2
+    back = target.pop(-1)
+    is_pass = 1
     
-    return np.average(np.array(word_embeddings), axis=0)
+    if tag == '*':
+        is_pass = 0
 
-def cosine_similarity(item0, item1):
-    return np.dot(item0, item1) / (np.linalg.norm(item0) * np.linalg.norm(item1))
+    if target[0] == 'DetailList':
+        xpath = f"{prefix+target[0]}/{prefix}PayItem/{prefix}PayItem"
+    
+    elif target[0] == 'CostBreakdownList':
+        xpath = f"{prefix+target[0]}/"
+        for i in range(len(target) - 1):
+            xpath += f"{prefix}WorkItem/[{prefix}Description='{target[i + 1]}']/"
+    
+    find = root.findall(xpath)
+    for f in find:
+        for ff in f:
+            if all(k in ff.text for k in keyword.split(',')):
+                if tag != '*':
+                    return find_number(ff.text, front, back)
+                is_pass = 1
 
-def calculate_word_emebedding(target: str, text_list: List[str]):
-    model_path = 'word2vec.zh.300.model'
-    model = Word2Vec.load(model_path, mmap='r')
+            if front in ff.text and is_pass and tag == '*':
+                return f.find(f"{prefix}Quantity").text
 
-    target_embed = get_word_embedding(target, model)
 
-    cosine_similarity_list = []
-    for i in range(len(text_list)):
-        text = text_list[i]
-        source_embed = get_word_embedding(text, model)
-        cosine_similarity_list.append(cosine_similarity(target_embed, source_embed))
+def find_number(value, front, back):
+    return value.split(front)[-1].split(back)[0]
 
-    return text_list[np.argmax(cosine_similarity_list)]
+def find_amount(key):
+    xml_path = 'schema.xml'
+
+    tree = ET.parse(xml_path)
+    root = tree.getroot()
+    
+    value = root.find(f"File/[@Description='數量計算書']/WorkItemType[@Description='TYPE S1']/{key}/Value")
+    return value.text
+
+def compare(key, compare_dict):
+    target_value = find_amount(key)
+    budget_value = find_budget(compare_dict[key])
+    delta = abs(round(float(target_value)) - round(float(budget_value))) < 0.1
+    print(key)
+    print(target_value, '\t', budget_value, '\t', delta)
+
 
 def main():
     compare_dict = {
-        'Total': ['連續壁型式(編號) TYPE S1', '連續壁，(含導溝，厚100cm)，TYPE S1']
+        'Concrete/Total': ['DetailList', '連續壁，(含導溝，厚100cm)，TYPE S1'],
+        'Concrete/Thickness': ['', 'DetailList', '連續壁，(含導溝,TYPE S1', '厚', 'cm'],
+        'Concrete/Strength': ['', 'CostBreakdownList', '連續壁，(含導溝，厚100cm)，TYPE S1', '產品，預拌混凝土材料費', '材料費，', 'kgf/cm2'],
+        
+        'GuideWall/Total': ['CostBreakdownList', '連續壁，(含導溝，厚100cm)，TYPE S1', '產品，預拌混凝土材料費，210kgf/cm2，第1型水泥'],
+        'RebarCage/Rebar/Total': ['CostBreakdownList', '連續壁，(含導溝，厚100cm)，TYPE S1', '產品，鋼筋，SD420W'],
+        'EndPanel/Total': ['CostBreakdownList', '連續壁，(含導溝，厚100cm)，TYPE S1', '產品，金屬材料，鋼料，末端板，分隔板'],
+        'SupportGroup/SteelWeight': ['CostBreakdownList', '開挖支撐及保護，LG09站', '臨時擋土支撐工法，支撐系統之型鋼組立'],
+        'SupportGroup/SteelWeight2': ['CostBreakdownList', '開挖支撐及保護，LG09站', '臨時擋土支撐工法，支撐系統之型鋼拆除'],
+        
+        'MiddleColumn/Steel/Count': ['CostBreakdownList', '開挖支撐及保護，LG09站', '全套管式鑽掘混凝土基樁，D=1000mm，施作深度27公尺，實作深度5公尺'],
+        'MiddleColumn/Steel/Above': ['*', 'CostBreakdownList', '開挖支撐及保護，LG09站', '中間樁(柱)', '臨時擋土支撐工法，支撐系統之型鋼拆除', ''],
+        'MiddleColumn/Steel/Under': ['CostBreakdownList', '開挖支撐及保護，LG09站', '產品，結構用鋼材，H型鋼'],
+        
+        'MiddleColumn/DrilledPile/Diameter': ['', 'CostBreakdownList', '開挖支撐及保護，LG09站', '全套管式鑽掘混凝土基樁', 'D=', 'mm'],
+        'MiddleColumn/DrilledPile/Depth': ['', 'CostBreakdownList', '開挖支撐及保護，LG09站', '全套管式鑽掘混凝土基樁', '施作深度', '公尺'],
+        'MiddleColumn/DrilledPile/RealDepth': ['', 'CostBreakdownList', '開挖支撐及保護，LG09站', '全套管式鑽掘混凝土基樁', '實作深度', '公尺'],
+        'MiddleColumn/DrilledPile/Strength': ['', 'CostBreakdownList', '開挖支撐及保護，LG09站', '全套管式鑽掘混凝土基樁，D=1000mm，施作深度27公尺，實作深度5公尺', '產品，預拌混凝土材料費', '材料費，', 'kgf/cm2'],
+        'MiddleColumn/DrilledPile/Backfill': ['CostBreakdownList', '開挖支撐及保護，LG09站', '全套管式鑽掘混凝土基樁，D=1000mm，施作深度27公尺，實作深度5公尺', '構造物回填，借土，第Ⅰ類材料'],
+        'MiddleColumn/DrilledPile/SteelCageWeight': ['CostBreakdownList', '開挖支撐及保護，LG09站', '全套管式鑽掘混凝土基樁，D=1000mm，施作深度27公尺，實作深度5公尺', '產品，鋼筋，SD420W'],
     }
-    # read_xml()
-    # read_excel()
+    # key = list(compare_dict.keys())[3]
+    # compare(key, compare_dict)
 
-    # read_budget()
-    read_amount_xml()
-    exit()
+    # key = list(compare_dict.keys())[2]
+    # compare(key, compare_dict)
 
-    # text_dict = read_knowledge()
-    text_dict = read_budget()
-    target_item = 'LG09車站雙牆系統連續壁，（含導溝，厚100cm），產品，預拌混凝土材料費，245kgf/cm2，第一型'
-    target_item = '連續壁，(含導溝，厚100cm)，TYPE S1'
-    target_item = '連續壁型式(編號) TYPE S1'
-    target_value = 6713.6
-
-    print(text_dict)
-
-    text_list = list(text_dict.keys())
-    source_item = calculate_word_emebedding(target_item, text_list)
-    source_value = text_dict[source_item]
-
-    print('target: ', target_item)
-    print('target value: ', target_value)
-    print('source: ', source_item)
-    print('source value: ', source_value)
-    print('same: ', target_value == source_value)
-
+    for key in list(compare_dict.keys()):
+        compare(key, compare_dict)
+        
 
 if __name__ == '__main__':
     main()
