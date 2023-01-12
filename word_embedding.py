@@ -1,15 +1,17 @@
 import xml.etree.cElementTree as ET
+import argparse, csv
 
 prefix = '{http://pcstd.pcc.gov.tw/2003/eTender}'
 
-def find_budget(target):
-    xml_path = '(空白標單)臺北都會區大眾捷運系統萬大線(第二期工程)-CQ881標土建工程CQ881-11-04_bp_rbid.xml'
-    tree = ET.parse(xml_path)
-    root = tree.getroot()
+def find_amount(key, root):
+    return root.find(f"File/[@Description='數量計算書']/WorkItemType[@Description='TYPE S1']/{key}/Value").text
 
+def find_budget(target, root):
+    # exclude special case
     if target[0] == '' or target[0] == '*':
         return find_budget_in(target, root)
 
+    # common case
     if target[0] == 'DetailList':
         xpath = f"{prefix+target[0]}/{prefix}PayItem/{prefix}PayItem/[{prefix}Description='{target[1]}']/{prefix}Quantity"
         
@@ -21,6 +23,7 @@ def find_budget(target):
 
     return root.find(xpath).text
 
+# target value is in item
 def find_budget_in(target, root):
     tag = target.pop(0)
     keyword = target.pop(-3)
@@ -28,6 +31,7 @@ def find_budget_in(target, root):
     back = target.pop(-1)
     is_pass = 1
     
+    # if same item name
     if tag == '*':
         is_pass = 0
 
@@ -47,31 +51,33 @@ def find_budget_in(target, root):
                     return find_number(ff.text, front, back)
                 is_pass = 1
 
+            # if found keyword in description, return the next item with keyword2(front)
             if front in ff.text and is_pass and tag == '*':
                 return f.find(f"{prefix}Quantity").text
-
 
 def find_number(value, front, back):
     return value.split(front)[-1].split(back)[0]
 
-def find_amount(key):
-    xml_path = 'schema.xml'
-
-    tree = ET.parse(xml_path)
-    root = tree.getroot()
-    
-    value = root.find(f"File/[@Description='數量計算書']/WorkItemType[@Description='TYPE S1']/{key}/Value")
-    return value.text
-
-def compare(key, compare_dict):
-    target_value = find_amount(key)
-    budget_value = find_budget(compare_dict[key])
+def compare(key, compare_dict, amount_root, budget_root):
+    target_value = find_amount(key, amount_root)
+    budget_value = find_budget(compare_dict[key], budget_root)
     delta = abs(round(float(target_value)) - round(float(budget_value))) < 0.1
-    print(key)
-    print(target_value, '\t', budget_value, '\t', delta)
+    return key, target_value, budget_value, delta
 
 
 def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--amount_path', default='schema.xml')
+    parser.add_argument('--budget_path', default='CQ881標土建工程CQ881-11-04_bp_rbid.xml')
+    parser.add_argument('--output_path', default='output.csv')
+    args = parser.parse_args()
+
+    f = open(args.output_path, 'w')
+    writer = csv.writer(f)
+
+    amount_root = ET.parse(args.amount_path).getroot()
+    budget_root = ET.parse(args.budget_path).getroot()
+
     compare_dict = {
         'Concrete/Total': ['DetailList', '連續壁，(含導溝，厚100cm)，TYPE S1'],
         'Concrete/Thickness': ['', 'DetailList', '連續壁，(含導溝,TYPE S1', '厚', 'cm'],
@@ -94,15 +100,10 @@ def main():
         'MiddleColumn/DrilledPile/Backfill': ['CostBreakdownList', '開挖支撐及保護，LG09站', '全套管式鑽掘混凝土基樁，D=1000mm，施作深度27公尺，實作深度5公尺', '構造物回填，借土，第Ⅰ類材料'],
         'MiddleColumn/DrilledPile/SteelCageWeight': ['CostBreakdownList', '開挖支撐及保護，LG09站', '全套管式鑽掘混凝土基樁，D=1000mm，施作深度27公尺，實作深度5公尺', '產品，鋼筋，SD420W'],
     }
-    # key = list(compare_dict.keys())[3]
-    # compare(key, compare_dict)
-
-    # key = list(compare_dict.keys())[2]
-    # compare(key, compare_dict)
 
     for key in list(compare_dict.keys()):
-        compare(key, compare_dict)
-        
+        row = compare(key, compare_dict, amount_root, budget_root)
+        writer.writerow(row)
 
 if __name__ == '__main__':
     main()
