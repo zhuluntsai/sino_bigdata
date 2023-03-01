@@ -1,10 +1,15 @@
+# -*- coding: utf-8 -*-
 import xml.etree.cElementTree as ET
 import argparse, csv
 
 prefix = '{http://pcstd.pcc.gov.tw/2003/eTender}'
 
 def find_amount(key, root):
-    return root.find(f"File/[@Description='數量計算書']/WorkItemType[@Description='TYPE S1']/{key}/Value").text
+    try:
+        return root.find(f"File/[@Description='數量計算書']/WorkItemType[@Description='TYPE S1']/{key}/Value").text
+    except:
+        # print(f"File/[@Description='數量計算書']/WorkItemType[@Description='TYPE S1']/{key}/Value")
+        return 0
 
 def find_budget(target, root):
     # exclude special case
@@ -67,7 +72,7 @@ def compare(key, compare_dict, amount_root, budget_root):
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--amount_path', default='schema.xml')
+    parser.add_argument('--amount_path', default='compare/tree.xml')
     parser.add_argument('--budget_path', default='CQ881標土建工程CQ881-11-04_bp_rbid.xml')
     parser.add_argument('--output_path', default='output.csv')
     args = parser.parse_args()
@@ -86,18 +91,17 @@ def main():
         'GuideWall/Total': ['CostBreakdownList', '連續壁，(含導溝，厚100cm)，TYPE S1', '產品，預拌混凝土材料費，210kgf/cm2，第1型水泥'],
         'RebarCage/Rebar/Total': ['CostBreakdownList', '連續壁，(含導溝，厚100cm)，TYPE S1', '產品，鋼筋，SD420W'],
         'EndPanel/Total': ['CostBreakdownList', '連續壁，(含導溝，厚100cm)，TYPE S1', '產品，金屬材料，鋼料，末端板，分隔板'],
+        
         'SupportGroup/SteelWeight': ['CostBreakdownList', '開挖支撐及保護，LG09站', '臨時擋土支撐工法，支撐系統之型鋼組立'],
         'SupportGroup/SteelWeight2': ['CostBreakdownList', '開挖支撐及保護，LG09站', '臨時擋土支撐工法，支撐系統之型鋼拆除'],
+        'SupportGroup/Support/Count': ['CostBreakdownList', '開挖支撐及保護，LG09站', '全套管式鑽掘混凝土基樁，D=1000mm，施作深度27公尺，實作深度5公尺'],
         
-        'MiddleColumn/Steel/Count': ['CostBreakdownList', '開挖支撐及保護，LG09站', '全套管式鑽掘混凝土基樁，D=1000mm，施作深度27公尺，實作深度5公尺'],
-        'MiddleColumn/Steel/Above': ['*', 'CostBreakdownList', '開挖支撐及保護，LG09站', '中間樁(柱)', '臨時擋土支撐工法，支撐系統之型鋼拆除', ''],
-        'MiddleColumn/Steel/Under': ['CostBreakdownList', '開挖支撐及保護，LG09站', '產品，結構用鋼材，H型鋼'],
-        
+        'MiddleColumn/Depth': ['*', 'CostBreakdownList', '開挖支撐及保護，LG09站', '中間樁(柱)', '臨時擋土支撐工法，支撐系統之型鋼拆除', ''],
+        'MiddleColumn/Steel/Length': ['CostBreakdownList', '開挖支撐及保護，LG09站', '產品，結構用鋼材，H型鋼'],
         'MiddleColumn/DrilledPile/Diameter': ['', 'CostBreakdownList', '開挖支撐及保護，LG09站', '全套管式鑽掘混凝土基樁', 'D=', 'mm'],
-        'MiddleColumn/DrilledPile/Depth': ['', 'CostBreakdownList', '開挖支撐及保護，LG09站', '全套管式鑽掘混凝土基樁', '施作深度', '公尺'],
-        'MiddleColumn/DrilledPile/RealDepth': ['', 'CostBreakdownList', '開挖支撐及保護，LG09站', '全套管式鑽掘混凝土基樁', '實作深度', '公尺'],
+        'MiddleColumn/Length': ['', 'CostBreakdownList', '開挖支撐及保護，LG09站', '全套管式鑽掘混凝土基樁', '施作深度', '公尺'],
+        'MiddleColumn/DrilledPile/Length': ['', 'CostBreakdownList', '開挖支撐及保護，LG09站', '全套管式鑽掘混凝土基樁', '實作深度', '公尺'],
         'MiddleColumn/DrilledPile/Strength': ['', 'CostBreakdownList', '開挖支撐及保護，LG09站', '全套管式鑽掘混凝土基樁，D=1000mm，施作深度27公尺，實作深度5公尺', '產品，預拌混凝土材料費', '材料費，', 'kgf/cm2'],
-        'MiddleColumn/DrilledPile/Backfill': ['CostBreakdownList', '開挖支撐及保護，LG09站', '全套管式鑽掘混凝土基樁，D=1000mm，施作深度27公尺，實作深度5公尺', '構造物回填，借土，第Ⅰ類材料'],
         'MiddleColumn/DrilledPile/SteelCageWeight': ['CostBreakdownList', '開挖支撐及保護，LG09站', '全套管式鑽掘混凝土基樁，D=1000mm，施作深度27公尺，實作深度5公尺', '產品，鋼筋，SD420W'],
     }
 
