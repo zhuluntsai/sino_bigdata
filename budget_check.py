@@ -4,9 +4,9 @@ import argparse, csv
 
 prefix = '{http://pcstd.pcc.gov.tw/2003/eTender}'
 
-def find_amount(key, root):
+def find_amount(key, root, i):
     try:
-        return root.find(f"File/[@Description='數量計算書']/WorkItemType[@Description='TYPE S1']/{key}/Value").text
+        return root.find(f"File/[@Description='數量計算書']/WorkItemType[@Description='TYPE S{i}']/{key}/Value").text
     except:
         # print(f"File/[@Description='數量計算書']/WorkItemType[@Description='TYPE S1']/{key}/Value")
         return 0
@@ -63,14 +63,13 @@ def find_budget_in(target, root):
 def find_number(value, front, back):
     return value.split(front)[-1].split(back)[0]
 
-def compare(key, compare_dict, amount_root, budget_root):
-    target_value = find_amount(key, amount_root)
-    budget_value = find_budget(compare_dict[key], budget_root)
+def compare(key, value, amount_root, budget_root, i = 1):
+    target_value = find_amount(key, amount_root, i)
+    budget_value = find_budget(value, budget_root)
     delta = abs(round(float(target_value)) - round(float(budget_value))) < 0.1
     return key, target_value, budget_value, delta
 
-
-def main():
+def main(num_workItemType):
     parser = argparse.ArgumentParser()
     parser.add_argument('--amount_path', default='compare/tree.xml')
     parser.add_argument('--budget_path', default='CQ881標土建工程CQ881-11-04_bp_rbid.xml')
@@ -84,13 +83,13 @@ def main():
     budget_root = ET.parse(args.budget_path).getroot()
 
     compare_dict = {
-        'Concrete/Total': ['DetailList', '連續壁，(含導溝，厚100cm)，TYPE S1'],
-        'Concrete/Thickness': ['', 'DetailList', '連續壁，(含導溝,TYPE S1', '厚', 'cm'],
-        'Concrete/Strength': ['', 'CostBreakdownList', '連續壁，(含導溝，厚100cm)，TYPE S1', '產品，預拌混凝土材料費', '材料費，', 'kgf/cm2'],
+        'Concrete/Total': ['DetailList', '連續壁，(含導溝，厚100cm)，TYPE S0'],
+        'Concrete/Thickness': ['', 'DetailList', '連續壁，(含導溝,TYPE S0', '厚', 'cm'],
+        'Concrete/Strength': ['', 'CostBreakdownList', '連續壁，(含導溝，厚100cm)，TYPE S0', '產品，預拌混凝土材料費', '材料費，', 'kgf/cm2'],
         
-        'GuideWall/Total': ['CostBreakdownList', '連續壁，(含導溝，厚100cm)，TYPE S1', '產品，預拌混凝土材料費，210kgf/cm2，第1型水泥'],
-        'RebarCage/Rebar/Total': ['CostBreakdownList', '連續壁，(含導溝，厚100cm)，TYPE S1', '產品，鋼筋，SD420W'],
-        'EndPanel/Total': ['CostBreakdownList', '連續壁，(含導溝，厚100cm)，TYPE S1', '產品，金屬材料，鋼料，末端板，分隔板'],
+        'GuideWall/Total': ['CostBreakdownList', '連續壁，(含導溝，厚100cm)，TYPE S0', '產品，預拌混凝土材料費，210kgf/cm2，第1型水泥'],
+        'RebarCage/Rebar/Total': ['CostBreakdownList', '連續壁，(含導溝，厚100cm)，TYPE S0', '產品，鋼筋，SD420W'],
+        'EndPanel/Total': ['CostBreakdownList', '連續壁，(含導溝，厚100cm)，TYPE S0', '產品，金屬材料，鋼料，末端板，分隔板'],
         
         'SupportGroup/SteelWeight': ['CostBreakdownList', '開挖支撐及保護，LG09站', '臨時擋土支撐工法，支撐系統之型鋼組立'],
         'SupportGroup/SteelWeight2': ['CostBreakdownList', '開挖支撐及保護，LG09站', '臨時擋土支撐工法，支撐系統之型鋼拆除'],
@@ -106,8 +105,28 @@ def main():
     }
 
     for key in list(compare_dict.keys()):
-        row = compare(key, compare_dict, amount_root, budget_root)
-        writer.writerow(row)
+        
+        # if there is any key has 'TYPE'
+        if any('TYPE' in v for v in compare_dict[key]):
+            type_index = [i for i, v in enumerate(compare_dict[key]) if 'TYPE' in v][0]
+
+            for i in range(1, num_workItemType + 1):
+                compare_dict[key][type_index] = compare_dict[key][type_index].replace(f'TYPE S{i - 1}', f'TYPE S{i}')
+                value = compare_dict[key].copy()
+                try:
+                    key, target_value, budget_value, delta = compare(key, value, amount_root, budget_root, i)
+                    row = key, f'TYPE S{i}', target_value, budget_value, delta
+                    writer.writerow(row)
+
+                except:
+                    pass
+        else:
+            value = compare_dict[key].copy()
+            key, target_value, budget_value, delta = compare(key, value, amount_root, budget_root)
+            row = key, target_value, budget_value, delta
+            writer.writerow(row)
+        
 
 if __name__ == '__main__':
-    main()
+    num_workItemType = 3
+    main(num_workItemType)
