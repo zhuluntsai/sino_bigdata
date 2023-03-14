@@ -72,6 +72,8 @@ def compare_budget(key, value, amount_root, budget_root, i = 1):
 
     if key == 'Concrete/Thickness':
         budget_value = float(budget_value) / 100
+    elif key == 'MiddleColumn/DrilledPile/Diameter':
+        budget_value = float(budget_value) / 10
 
     delta = abs(round(float(target_value)) - round(float(budget_value))) < 0.1
     return key, target_value, budget_value, delta
