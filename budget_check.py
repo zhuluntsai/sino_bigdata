@@ -58,14 +58,21 @@ def find_budget_in(target, root):
 
             # if found keyword in description, return the next item with keyword2(front)
             if front in ff.text and is_pass and tag == '*':
-                return f.find(f"{prefix}Quantity").text
+                try:
+                    return find_number(ff.text, front, back)
+                except:
+                    return f.find(f"{prefix}Quantity").text
 
 def find_number(value, front, back):
     return value.split(front)[-1].split(back)[0]
 
-def compare(key, value, amount_root, budget_root, i = 1):
+def compare_budget(key, value, amount_root, budget_root, i = 1):
     target_value = find_amount(key, amount_root, i)
     budget_value = find_budget(value, budget_root)
+
+    if key == 'Concrete/Thickness':
+        budget_value = float(budget_value) / 100
+
     delta = abs(round(float(target_value)) - round(float(budget_value))) < 0.1
     return key, target_value, budget_value, delta
 
@@ -85,7 +92,7 @@ def main(num_workItemType):
     compare_dict = {
         'Concrete/Total': ['DetailList', '連續壁，(含導溝，厚100cm)，TYPE S0'],
         'Concrete/Thickness': ['', 'DetailList', '連續壁，(含導溝,TYPE S0', '厚', 'cm'],
-        'Concrete/Strength': ['', 'CostBreakdownList', '連續壁，(含導溝，厚100cm)，TYPE S0', '產品，預拌混凝土材料費', '材料費，', 'kgf/cm2'],
+        'Concrete/Strength': ['*', 'CostBreakdownList', '連續壁，(含導溝，厚100cm)，TYPE S0', '混凝土澆置', '材料費，', 'kgf/cm2'],
         
         'GuideWall/Total': ['CostBreakdownList', '連續壁，(含導溝，厚100cm)，TYPE S0', '產品，預拌混凝土材料費，210kgf/cm2，第1型水泥'],
         'RebarCage/Rebar/Total': ['CostBreakdownList', '連續壁，(含導溝，厚100cm)，TYPE S0', '產品，鋼筋，SD420W'],
@@ -114,7 +121,7 @@ def main(num_workItemType):
                 compare_dict[key][type_index] = compare_dict[key][type_index].replace(f'TYPE S{i - 1}', f'TYPE S{i}')
                 value = compare_dict[key].copy()
                 try:
-                    key, target_value, budget_value, delta = compare(key, value, amount_root, budget_root, i)
+                    key, target_value, budget_value, delta = compare_budget(key, value, amount_root, budget_root, i)
                     row = key, f'TYPE S{i}', target_value, budget_value, delta
                     writer.writerow(row)
 
@@ -122,7 +129,7 @@ def main(num_workItemType):
                     pass
         else:
             value = compare_dict[key].copy()
-            key, target_value, budget_value, delta = compare(key, value, amount_root, budget_root)
+            key, target_value, budget_value, delta = compare_budget(key, value, amount_root, budget_root)
             row = key, target_value, budget_value, delta
             writer.writerow(row)
         
