@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 import xml.etree.cElementTree as ET
 import argparse, csv
+import numpy as np
 
 prefix = '{http://pcstd.pcc.gov.tw/2003/eTender}'
 
@@ -92,8 +93,8 @@ def main(num_workItemType):
     budget_root = ET.parse(args.budget_path).getroot()
 
     compare_dict = {
-        'Concrete/Total': ['DetailList', '連續壁，(含導溝，厚100cm)，TYPE S0'],
         'Concrete/Thickness': ['', 'DetailList', '連續壁，(含導溝,TYPE S0', '厚', 'cm'],
+        'Concrete/Total': ['DetailList', '連續壁，(含導溝，厚100cm)，TYPE S0'],
         'Concrete/Strength': ['*', 'CostBreakdownList', '連續壁，(含導溝，厚100cm)，TYPE S0', '混凝土澆置', '材料費，', 'kgf/cm2'],
         
         'GuideWall/Total': ['CostBreakdownList', '連續壁，(含導溝，厚100cm)，TYPE S0', '產品，預拌混凝土材料費，210kgf/cm2，第1型水泥'],
@@ -113,19 +114,24 @@ def main(num_workItemType):
         'MiddleColumn/DrilledPile/SteelCageWeight': ['CostBreakdownList', '開挖支撐及保護，LG09站', '全套管式鑽掘混凝土基樁，D=1000mm，施作深度27公尺，實作深度5公尺', '產品，鋼筋，SD420W'],
     }
 
+    thickness = [100] * (num_workItemType + 1)
     for key in list(compare_dict.keys()):
         
         # if there is any key has 'TYPE'
         if any('TYPE' in v for v in compare_dict[key]):
+            # get the index of the item with TYPE
             type_index = [i for i, v in enumerate(compare_dict[key]) if 'TYPE' in v][0]
 
             for i in range(1, num_workItemType + 1):
-                compare_dict[key][type_index] = compare_dict[key][type_index].replace(f'TYPE S{i - 1}', f'TYPE S{i}')
+                compare_dict[key][type_index] = compare_dict[key][type_index].replace(f'TYPE S{i - 1}', f'TYPE S{i}').replace(f'{thickness[i - 1]}cm', f'{thickness[i]}cm')
                 value = compare_dict[key].copy()
                 try:
                     key, target_value, budget_value, delta = compare_budget(key, value, amount_root, budget_root, i)
                     row = key, f'TYPE S{i}', target_value, budget_value, delta
                     writer.writerow(row)
+
+                    if key == 'Concrete/Thickness':
+                        thickness[i] = int(budget_value * 100)
 
                 except:
                     pass
