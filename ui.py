@@ -1,6 +1,6 @@
 import tkinter as tk
 from tkinter import filedialog
-from wordpreprocess im
+import os
 
 root = tk.Tk()
 root.title('文件比對程式')
@@ -53,9 +53,16 @@ def compare():
     output_path = output_path_select.file_path
     treeName = 'tree.xml'
 
+    # wordName = 'word-preprocess/data/LG09站地下擋土壁及支撐系統20221212圍囹正確版_修改換行符.docx'
+    # excelName = 'word-preprocess/data/CQ881標LG09站地工數量-1111129開發用.xls'
+    # schemaName = 'word-preprocess/data/schema.xml'
+    # budget_path = 'word-preprocess/data/CQ881標土建工程CQ881-11-04_bp_rbid.xml'
+    # output_path = 'report.csv'
+    # treeName = 'tree.xml'
 
+    os.system(f'python word2xml.py --word_path {wordName} --excel_path {excelName} --schema_path {schemaName} --budget_path {budget_path} --output_path {output_path} --tree_path {treeName}')
 
-    print('compare complete')
+    print(f'比對報告已儲存在 {output_path}')
 
 wordName_select = fileSelect(root, '設計計算書', 'docx')
 wordName_select.grid(row=0, pady=5)
@@ -73,6 +80,6 @@ output_path_select = fileSaveAs(root, '輸出路徑', 'csv')
 output_path_select.grid(row=4, pady=2)
 
 compare_button = tk.Button(root, text="文件比對", command=compare)
-compare_button.grid(row=5,column=0)
+compare_button.grid(row=5, pady=60, ipadx=50)
 
 root.mainloop()
