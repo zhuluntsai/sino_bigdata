@@ -51,7 +51,6 @@ class typeSelect(tk.Frame):
     def __init__(self, parent, label, type_list):
         tk.Frame.__init__(self, parent)
     
-        self.filePath = tk.StringVar()
         self.label = tk.Label(self, text=label, width=10)
         self.label.grid(row=0, column=0)
 
@@ -61,7 +60,34 @@ class typeSelect(tk.Frame):
     @property
     def combo_box(self):
         return self.combobox.get()
+    
+class typeMultipleSelect(tk.Frame):
+    def __init__(self, parent, amount_type_list, middle_type_list):
+        tk.Frame.__init__(self, parent)
+    
+        self.label = []
+        self.listbox = []
 
+        self.label.append(tk.Label(self, text='數量計算書'))
+        self.label[0].grid(row=0, column=0)
+
+        self.listbox.append(tk.Label(self, text='中間柱、支撐'))
+        self.listbox[0].grid(row=1, column=0)
+
+        for i, amount in enumerate(amount_type_list, 1):
+            self.label.append(tk.Label(self, text=amount))
+            self.label[i].grid(row=0, column=i)
+
+            self.listbox.append(tk.Listbox(self, height=8, width=10, selectmode=tk.MULTIPLE, exportselection=False))
+            self.listbox[i].grid(row=1, column=i)
+            for middle in middle_type_list:
+                self.listbox[i].insert(tk.END, middle)
+
+    @property
+    def combo_box(self):
+        return self.combobox.get()
+
+pass_list = []
 def compare():
     wordName = wordName_select.file_path
     excelName = excelName_select.file_path
@@ -79,40 +105,38 @@ def compare():
     
     # os.system(f'python word2xml.py --word_path {wordName} --excel_path {excelName} --schema_path {schemaName} --budget_path {budget_path} --output_path {output_path} --tree_path {treeName}')
 
-    word_type_list = ['TYPE S1','TYPE S2','TYPE S3','TYPE S3']
-    excel_type_list = ['TYPE S1','TYPE S3','TYPE S4', 'TYPE S5']
+    amount_type_list = ['TYPE S1','TYPE S2','TYPE S3']
+    middle_type_list = ['TYPE S1','TYPE S3']
+    # [[0, 1], [2]]
 
-    # word_type_list = ['TYPE S1','TYPE S2','TYPE S3','TYPE S4']
-    # excel_type_list = ['TYPE S1','TYPE S2','TYPE S3']
+    # amount_type_list = ['TYPE T1','TYPE T1A','TYPE T2']
+    # middle_type_list = ['中間柱1左','中間柱1中','中間柱1右','中間柱2', '中間柱3']
+    # [[0], [0], [0], [2]]
 
-    print(f'比對報告已儲存在 {output_path}')
+    print(f'比對報告已儲存在 {output_path}') 
+    print(len(pass_list))
 
-    if len(box_list) == 0:
-        for i, l in enumerate(word_type_list):
-            box_list.append(typeSelect(root, label=l, type_list=excel_type_list))
-            box_list[-1].grid(row=5+i, pady=5)
-
-        compare_button.grid(row=5+i+1, pady=5, ipadx=50)
+    # if amount of word and excel doesn't match, add compare button
+    if len(pass_list) == 0:
+        global type_multiple_select
+        type_multiple_select = typeMultipleSelect(root, amount_type_list=amount_type_list, middle_type_list=middle_type_list)
+        type_multiple_select.grid(row=6, pady=5)
+        compare_button.grid(row=7, pady=5, ipadx=50)
         root.update()
+
+        pass_list.append(1)
+    
+    # compare with group array
     else:
-        ln = []
-        temp = ''
-        temp_list = []
-        for i, b in enumerate(box_list):
-            text = b.combo_box
+        selection = []
+        group_array = []
+        for i, listbox in enumerate(type_multiple_select.listbox[1:]):
+            select = listbox.curselection()
+            print(select)
+            for s in select:
+                group_array.append(i)
 
-            if temp == '':
-                temp = text
-
-            if temp == text:
-                temp_list.append(i)
-            else: 
-                ln.append(temp_list)
-                temp = text
-                temp_list = [i]
-
-        ln.append(temp_list)
-        print(ln)    
+        print(group_array)
 
 wordName_select = fileSelect(root, '設計計算書', 'docx')
 wordName_select.grid(row=0, pady=5)
