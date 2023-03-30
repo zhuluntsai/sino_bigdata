@@ -3,6 +3,7 @@ import tkinter.ttk as ttk
 
 from tkinter import filedialog
 import os
+from word2xml import Word2Xml
 
 root = tk.Tk()
 root.title('文件比對程式')
@@ -78,7 +79,7 @@ class typeMultipleSelect(tk.Frame):
             self.label.append(tk.Label(self, text=amount))
             self.label[i].grid(row=0, column=i)
 
-            self.listbox.append(tk.Listbox(self, height=8, width=10, selectmode=tk.MULTIPLE, exportselection=False))
+            self.listbox.append(tk.Listbox(self, height=8, width=20, selectmode=tk.MULTIPLE, exportselection=False))
             self.listbox[i].grid(row=1, column=i)
             for middle in middle_type_list:
                 self.listbox[i].insert(tk.END, middle)
@@ -89,6 +90,8 @@ class typeMultipleSelect(tk.Frame):
 
 pass_list = []
 def compare():
+    global type_multiple_select
+
     wordName = wordName_select.file_path
     excelName = excelName_select.file_path
     schemaName = schemaName_select.file_path
@@ -96,47 +99,43 @@ def compare():
     output_path = output_path_select.file_path
     treeName = 'tree.xml'
 
+    prefix = '/home/user/Documents/weilun/sinotech/'
     wordName = 'word-preprocess/data/LG09站地下擋土壁及支撐系統20221212圍囹正確版_修改換行符.docx'
-    excelName = 'word-preprocess/data/CQ881標LG09站地工數量-1111129開發用.xls'
+    excelName = 'word-preprocess/data/CQ881標LG09站地工數量-1111230更新.xls'
     schemaName = 'word-preprocess/data/schema.xml'
     budget_path = 'word-preprocess/data/CQ881標土建工程CQ881-11-04_bp_rbid.xml'
     output_path = 'report.csv'
     treeName = 'tree.xml'
     
+    print(word2Xml.is_pass)
+    if word2Xml.is_pass != -1:
+        group_array = [[] for _ in range(len(word2Xml.middle_type_list))]
+        for i, listbox in enumerate(type_multiple_select.listbox[1:]):
+            select = listbox.curselection()
+            for s in select:
+                group_array[s].append(i)
+
+        word2Xml.group_array = group_array
+
     # os.system(f'python word2xml.py --word_path {wordName} --excel_path {excelName} --schema_path {schemaName} --budget_path {budget_path} --output_path {output_path} --tree_path {treeName}')
-
-    amount_type_list = ['TYPE S1','TYPE S2','TYPE S3']
-    middle_type_list = ['TYPE S1','TYPE S3']
-    # [[0, 1], [2]]
-
-    # amount_type_list = ['TYPE T1','TYPE T1A','TYPE T2']
-    # middle_type_list = ['中間柱1左','中間柱1中','中間柱1右','中間柱2', '中間柱3']
-    # [[0], [0], [0], [2]]
+    word2Xml.export_report(
+        wordName=wordName, 
+        excelName=excelName,
+        schemaName=schemaName,
+        budget_path=budget_path,
+        output_path=output_path,
+        treeName=treeName,)
 
     print(f'比對報告已儲存在 {output_path}') 
-    print(len(pass_list))
 
     # if amount of word and excel doesn't match, add compare button
-    if len(pass_list) == 0:
-        global type_multiple_select
-        type_multiple_select = typeMultipleSelect(root, amount_type_list=amount_type_list, middle_type_list=middle_type_list)
+    if not word2Xml.is_pass:
+        type_multiple_select = typeMultipleSelect(root, amount_type_list=word2Xml.amount_type_list, middle_type_list=word2Xml.middle_type_list)
         type_multiple_select.grid(row=6, pady=5)
         compare_button.grid(row=7, pady=5, ipadx=50)
         root.update()
 
-        pass_list.append(1)
-    
-    # compare with group array
-    else:
-        selection = []
-        group_array = []
-        for i, listbox in enumerate(type_multiple_select.listbox[1:]):
-            select = listbox.curselection()
-            print(select)
-            for s in select:
-                group_array.append(i)
-
-        print(group_array)
+        word2Xml.is_pass = True        
 
 wordName_select = fileSelect(root, '設計計算書', 'docx')
 wordName_select.grid(row=0, pady=5)
@@ -157,5 +156,14 @@ compare_button = tk.Button(root, text="文件比對", command=compare)
 compare_button.grid(row=5, pady=10, ipadx=50)
 
 box_list = []
+word2Xml = Word2Xml()
 
 root.mainloop()
+
+# amount_type_list = ['TYPE S1','TYPE S2','TYPE S3']
+# middle_type_list = ['TYPE S1','TYPE S3']
+# [[0, 1], [2]]
+
+# amount_type_list = ['TYPE T1','TYPE T1A','TYPE T2']
+# middle_type_list = ['中間柱1左','中間柱1中','中間柱1右','中間柱2', '中間柱3']
+# [[0], [0], [0], [2]]
