@@ -94,6 +94,7 @@ def compare():
 
     wordName = wordName_select.file_path
     excelName = excelName_select.file_path
+    drawing_schema = drawing_schema_select.file_path
     schemaName = schemaName_select.file_path
     budget_path = budget_path_select.file_path
     output_path = output_path_select.file_path
@@ -102,6 +103,7 @@ def compare():
     prefix = '/home/user/Documents/weilun/sinotech/'
     wordName = 'word-preprocess/data/LG09站地下擋土壁及支撐系統20221212圍囹正確版_修改換行符.docx'
     excelName = 'word-preprocess/data/CQ881標LG09站地工數量-1111230更新.xls'
+    drawing_schema = 'word-preprocess/data/drawing_schema.xml'
     schemaName = 'word-preprocess/data/schema.xml'
     budget_path = 'word-preprocess/data/CQ881標土建工程CQ881-11-04_bp_rbid.xml'
     output_path = 'report.csv'
@@ -122,6 +124,7 @@ def compare():
         wordName=wordName, 
         excelName=excelName,
         schemaName=schemaName,
+        drawing_schema=drawing_schema,
         budget_path=budget_path,
         output_path=output_path,
         treeName=treeName,)
@@ -131,8 +134,8 @@ def compare():
     # if amount of word and excel doesn't match, add compare button
     if not word2Xml.is_pass:
         type_multiple_select = typeMultipleSelect(root, amount_type_list=word2Xml.amount_type_list, middle_type_list=word2Xml.middle_type_list)
-        type_multiple_select.grid(row=6, pady=5)
-        compare_button.grid(row=7, pady=5, ipadx=50)
+        type_multiple_select.grid(row=7, pady=5)
+        compare_button.grid(row=8, pady=5, ipadx=50)
         root.update()
 
         word2Xml.is_pass = True        
@@ -143,17 +146,20 @@ wordName_select.grid(row=0, pady=5)
 excelName_select = fileSelect(root, '數量計算書', 'xls')
 excelName_select.grid(row=1, pady=2)
 
+drawing_schema_select = fileSelect(root, '設計圖說schema', 'xml')
+drawing_schema_select.grid(row=2, pady=2)
+
 schemaName_select = fileSelect(root, 'Schema', 'xml')
-schemaName_select.grid(row=2, pady=2)
+schemaName_select.grid(row=3, pady=2)
 
 budget_path_select = fileSelect(root, '預算書', 'xml')
-budget_path_select.grid(row=3, pady=2)
+budget_path_select.grid(row=4, pady=2)
 
 output_path_select = fileSaveAs(root, '輸出路徑', 'csv')
-output_path_select.grid(row=4, pady=2)
+output_path_select.grid(row=5, pady=2)
 
 compare_button = tk.Button(root, text="文件比對", command=compare)
-compare_button.grid(row=5, pady=10, ipadx=50)
+compare_button.grid(row=6, pady=10, ipadx=50)
 
 box_list = []
 word2Xml = Word2Xml()
