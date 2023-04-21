@@ -86,7 +86,7 @@ def compare_budget(key, value, budget_root, t='', thickness=''):
     elif key == 'MiddleColumn/DrilledPile/Diameter':
         budget_value = float(budget_value) / 10
 
-    return key, budget_value
+    return budget_value
 
 def find_type(budget_root, station):
     station_code = find_value(station, '開挖支撐及保護，', '站')
@@ -134,25 +134,19 @@ def main():
     }    
 
     compare_result = {}
-    for key in list(compare_dict.keys()):
-        compare_result[key] = []
+    for t, thickness in zip(type_list, thickness_list):
+        compare_result[f'TYPE {t}'] = {}
 
-        if any(['TYPE' in k for k in compare_dict[key]]):
-            for t, thickness in zip(type_list, thickness_list):
-                key, budget_value = compare_budget(key, compare_dict[key], budget_root, t, thickness)
-                compare_result[key].append([key, budget_value])
-                row = key, budget_value
-                writer.writerow(row)
-
-        else:
-            key, budget_value = compare_budget(key, compare_dict[key], budget_root)
-            compare_result[key].append([key, budget_value])
-            row = key, budget_value
+        for key in list(compare_dict.keys()):
+            budget_value = compare_budget(key, compare_dict[key], budget_root, t, thickness)
+            compare_result[f'TYPE {t}'][key] = budget_value
+            row = key, f'TYPE {t}', budget_value
             writer.writerow(row)
 
-    diameter = int(compare_result['MiddleColumn/DrilledPile/Diameter'][0][1]*10)
-    depth = compare_result['MiddleColumn/Length'][0][1]
-    real_depth = compare_result['MiddleColumn/DrilledPile/Length'][0][1]
+    first_type = compare_result[f'TYPE {type_list[0]}']
+    diameter = int(first_type['MiddleColumn/DrilledPile/Diameter']*10)
+    depth = first_type['MiddleColumn/Length']
+    real_depth = first_type['MiddleColumn/DrilledPile/Length']
     pile_path = f'全套管式鑽掘混凝土基樁，D={diameter}mm，施作深度{depth}公尺，實作深度{real_depth}公尺'
 
     compare_dict2 = {
@@ -160,13 +154,12 @@ def main():
         'MiddleColumn/DrilledPile/Strength': ['', 'CostBreakdownList', station, pile_path, '產品，預拌混凝土材料費', '材料費，', 'kgf/cm2'],
         'MiddleColumn/DrilledPile/SteelCageWeight': ['CostBreakdownList', station, pile_path, '產品，鋼筋，SD420W'],
     }
-    for key in list(compare_dict2.keys()):
-        compare_result[key] = []
-
-        key, budget_value = compare_budget(key, compare_dict2[key], budget_root)
-        compare_result[key].append([key, budget_value])
-        row = key, budget_value
-        writer.writerow(row)
+    for t, thickness in zip(type_list, thickness_list):
+        for key in list(compare_dict2.keys()):
+            budget_value = compare_budget(key, compare_dict2[key], budget_root, t, thickness)
+            compare_result[f'TYPE {t}'][key] = budget_value
+            row = key, f'TYPE {t}', budget_value
+            writer.writerow(row)
 
 if __name__ == '__main__':
     main()
