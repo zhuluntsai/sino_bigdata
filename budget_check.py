@@ -5,16 +5,9 @@ import numpy as np
 
 prefix = '{http://pcstd.pcc.gov.tw/2003/eTender}'
 
-def find_amount(key, root, i):
-    try:
-        return root.find(f"File/[@Description='數量計算書']/WorkItemType[@Description='TYPE S{i}']/{key}/Value").text
-    except:
-        # print(f"File/[@Description='數量計算書']/WorkItemType[@Description='TYPE S1']/{key}/Value")
-        return 0
-
 def find_budget(target, root):
     # exclude special case
-    if target[0] == '' or target[0] == '*':
+    if target[0] == '' or target[0] == '*' or target[0] == '#':
         return find_budget_in(target, root)
 
     # common case
@@ -38,37 +31,54 @@ def find_budget_in(target, root):
     is_pass = 1
     
     # if same item name
-    if tag == '*':
+    if tag == '*' or tag == '#':
         is_pass = 0
 
-    if target[0] == 'DetailList':
+    if target[0] == 'DetailList' and tag != '#':
         xpath = f"{prefix+target[0]}/{prefix}PayItem/{prefix}PayItem"
-    
+    elif target[0] == 'DetailList' and tag == '#':
+        xpath = f"{prefix+target[0]}/{prefix}PayItem"
     elif target[0] == 'CostBreakdownList':
         xpath = f"{prefix+target[0]}/"
         for i in range(len(target) - 1):
             xpath += f"{prefix}WorkItem/[{prefix}Description='{target[i + 1]}']/"
     
     find = root.findall(xpath)
+    count = 0
+    count_list = []
+    type_list = []
+    
     for f in find:
         for ff in f:
             if all(k in ff.text for k in keyword.split(',')):
-                if tag != '*':
-                    return find_number(ff.text, front, back)
+                if tag != '*' and tag != '#':
+                    return find_value(ff.text, front, back)
                 is_pass = 1
+            
+            if is_pass and tag == '#':
+                
+                for fff in ff:
+                    count += 1
+                    if front in fff.text:
+                        count_list.append(count)
+                        if len(set(np.diff(count_list))) <= 1:
+                            type_list.append(find_value(fff.text, 'TYPE', '連續壁'))
 
             # if found keyword in description, return the next item with keyword2(front)
-            if front in ff.text and is_pass and tag == '*':
+            if is_pass and tag == '*' and front in ff.text :
                 try:
-                    return find_number(ff.text, front, back)
+                    return find_value(ff.text, front, back)
                 except:
                     return f.find(f"{prefix}Quantity").text
 
-def find_number(value, front, back):
-    return value.split(front)[-1].split(back)[0]
+    if tag == '#':            
+        return type_list
 
-def compare_budget(key, value, amount_root, budget_root, i = 1):
-    target_value = find_amount(key, amount_root, i)
+def find_value(value, front, back):
+    return value.split(front)[-1].split(back)[0].strip()
+
+def compare_budget(key, value, budget_root, t='', thickness=''):    
+    value = [v.replace('S0', t).replace('000cm', f'{thickness}cm') if 'TYPE' in v else v for v in value ]
     budget_value = find_budget(value, budget_root)
 
     if key == 'Concrete/Thickness':
@@ -76,10 +86,19 @@ def compare_budget(key, value, amount_root, budget_root, i = 1):
     elif key == 'MiddleColumn/DrilledPile/Diameter':
         budget_value = float(budget_value) / 10
 
-    delta = abs(round(float(target_value)) - round(float(budget_value))) < 0.1
-    return key, target_value, budget_value, delta
+    return key, budget_value
 
-def main(num_workItemType):
+def find_type(budget_root, station):
+    station_code = find_value(station, '開挖支撐及保護，', '站')
+    value = ['#', 'DetailList', f'{station_code}站結構工程', '連續壁，(含導溝，厚', '']
+
+    return find_budget(value, budget_root)
+
+def find_thickness(budget_root, type_list):
+    value = ['', 'DetailList', '連續壁，(含導溝,TYPE S0', '厚', 'cm']
+    return [ find_budget([v.replace('S0', t) if 'TYPE' in v else v for v in value], budget_root) for t in type_list ]
+
+def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--amount_path', default='compare/tree.xml')
     parser.add_argument('--budget_path', default='CQ881標土建工程CQ881-11-04_bp_rbid.xml')
@@ -89,59 +108,65 @@ def main(num_workItemType):
     f = open(args.output_path, 'w')
     writer = csv.writer(f)
 
-    amount_root = ET.parse(args.amount_path).getroot()
     budget_root = ET.parse(args.budget_path).getroot()
+
+    station = '開挖支撐及保護，LG09站'
+    type_list = find_type(budget_root, station)
+    thickness_list = find_thickness(budget_root, type_list)
 
     compare_dict = {
         'Concrete/Thickness': ['', 'DetailList', '連續壁，(含導溝,TYPE S0', '厚', 'cm'],
-        'Concrete/Total': ['DetailList', '連續壁，(含導溝，厚100cm)，TYPE S0'],
-        'Concrete/Strength': ['*', 'CostBreakdownList', '連續壁，(含導溝，厚100cm)，TYPE S0', '混凝土澆置', '材料費，', 'kgf/cm2'],
+        'Concrete/Total': ['DetailList', '連續壁，(含導溝，厚000cm)，TYPE S0'],
+        'Concrete/Strength': ['*', 'CostBreakdownList', '連續壁，(含導溝，厚000cm)，TYPE S0', '混凝土澆置', '材料費，', 'kgf/cm2'],
         
-        'GuideWall/Total': ['CostBreakdownList', '連續壁，(含導溝，厚100cm)，TYPE S0', '產品，預拌混凝土材料費，210kgf/cm2，第1型水泥'],
-        'RebarCage/Rebar/Total': ['CostBreakdownList', '連續壁，(含導溝，厚100cm)，TYPE S0', '產品，鋼筋，SD420W'],
-        'EndPanel/Total': ['CostBreakdownList', '連續壁，(含導溝，厚100cm)，TYPE S0', '產品，金屬材料，鋼料，末端板，分隔板'],
+        'GuideWall/Total': ['CostBreakdownList', '連續壁，(含導溝，厚000cm)，TYPE S0', '產品，預拌混凝土材料費，210kgf/cm2，第1型水泥'],
+        'RebarCage/Rebar/Total': ['CostBreakdownList', '連續壁，(含導溝，厚000cm)，TYPE S0', '產品，鋼筋，SD420W'],
+        'EndPanel/Total': ['CostBreakdownList', '連續壁，(含導溝，厚000cm)，TYPE S0', '產品，金屬材料，鋼料，末端板，分隔板'],
         
-        'SupportGroup/SteelWeight': ['CostBreakdownList', '開挖支撐及保護，LG09站', '臨時擋土支撐工法，支撐系統之型鋼組立'],
-        'SupportGroup/SteelWeight2': ['CostBreakdownList', '開挖支撐及保護，LG09站', '臨時擋土支撐工法，支撐系統之型鋼拆除'],
-        'MiddleColumn/DrilledPile/Count': ['CostBreakdownList', '開挖支撐及保護，LG09站', '全套管式鑽掘混凝土基樁，D=1000mm，施作深度27公尺，實作深度5公尺'],
+        'SupportGroup/SteelWeight': ['CostBreakdownList', station, '臨時擋土支撐工法，支撐系統之型鋼組立'],
+        'SupportGroup/SteelWeight2': ['CostBreakdownList', station, '臨時擋土支撐工法，支撐系統之型鋼拆除'],
         
-        'MiddleColumn/Steel/TotalUpper': ['*', 'CostBreakdownList', '開挖支撐及保護，LG09站', '中間樁(柱)', '臨時擋土支撐工法，支撐系統之型鋼拆除', ''],
-        'MiddleColumn/Steel/TotalLower': ['CostBreakdownList', '開挖支撐及保護，LG09站', '產品，結構用鋼材，H型鋼'],
-        'MiddleColumn/DrilledPile/Diameter': ['', 'CostBreakdownList', '開挖支撐及保護，LG09站', '全套管式鑽掘混凝土基樁', 'D=', 'mm'],
-        'MiddleColumn/Length': ['', 'CostBreakdownList', '開挖支撐及保護，LG09站', '全套管式鑽掘混凝土基樁', '施作深度', '公尺'],
-        'MiddleColumn/DrilledPile/Length': ['', 'CostBreakdownList', '開挖支撐及保護，LG09站', '全套管式鑽掘混凝土基樁', '實作深度', '公尺'],
-        'MiddleColumn/DrilledPile/Strength': ['', 'CostBreakdownList', '開挖支撐及保護，LG09站', '全套管式鑽掘混凝土基樁，D=1000mm，施作深度27公尺，實作深度5公尺', '產品，預拌混凝土材料費', '材料費，', 'kgf/cm2'],
-        'MiddleColumn/DrilledPile/SteelCageWeight': ['CostBreakdownList', '開挖支撐及保護，LG09站', '全套管式鑽掘混凝土基樁，D=1000mm，施作深度27公尺，實作深度5公尺', '產品，鋼筋，SD420W'],
-    }
+        'MiddleColumn/Steel/TotalUpper': ['*', 'CostBreakdownList', station, '中間樁(柱)', '臨時擋土支撐工法，支撐系統之型鋼拆除', ''],
+        'MiddleColumn/Steel/TotalLower': ['CostBreakdownList', station, '產品，結構用鋼材，H型鋼'],
+        'MiddleColumn/DrilledPile/Diameter': ['', 'CostBreakdownList', station, '全套管式鑽掘混凝土基樁', 'D=', 'mm'],
+        'MiddleColumn/Length': ['', 'CostBreakdownList', station, '全套管式鑽掘混凝土基樁', '施作深度', '公尺'],
+        'MiddleColumn/DrilledPile/Length': ['', 'CostBreakdownList', station, '全套管式鑽掘混凝土基樁', '實作深度', '公尺'],
+    }    
 
-    thickness = [100] * (num_workItemType + 1)
+    compare_result = {}
     for key in list(compare_dict.keys()):
-        
-        # if there is any key has 'TYPE'
-        if any('TYPE' in v for v in compare_dict[key]):
-            # get the index of the item with TYPE
-            type_index = [i for i, v in enumerate(compare_dict[key]) if 'TYPE' in v][0]
+        compare_result[key] = []
 
-            for i in range(1, num_workItemType + 1):
-                compare_dict[key][type_index] = compare_dict[key][type_index].replace(f'TYPE S{i - 1}', f'TYPE S{i}').replace(f'{thickness[i - 1]}cm', f'{thickness[i]}cm')
-                value = compare_dict[key].copy()
-                try:
-                    key, target_value, budget_value, delta = compare_budget(key, value, amount_root, budget_root, i)
-                    row = key, f'TYPE S{i}', target_value, budget_value, delta
-                    writer.writerow(row)
+        if any(['TYPE' in k for k in compare_dict[key]]):
+            for t, thickness in zip(type_list, thickness_list):
+                key, budget_value = compare_budget(key, compare_dict[key], budget_root, t, thickness)
+                compare_result[key].append([key, budget_value])
+                row = key, budget_value
+                writer.writerow(row)
 
-                    if key == 'Concrete/Thickness':
-                        thickness[i] = int(budget_value * 100)
-
-                except:
-                    pass
         else:
-            value = compare_dict[key].copy()
-            key, target_value, budget_value, delta = compare_budget(key, value, amount_root, budget_root)
-            row = key, target_value, budget_value, delta
+            key, budget_value = compare_budget(key, compare_dict[key], budget_root)
+            compare_result[key].append([key, budget_value])
+            row = key, budget_value
             writer.writerow(row)
-        
+
+    diameter = int(compare_result['MiddleColumn/DrilledPile/Diameter'][0][1]*10)
+    depth = compare_result['MiddleColumn/Length'][0][1]
+    real_depth = compare_result['MiddleColumn/DrilledPile/Length'][0][1]
+    pile_path = f'全套管式鑽掘混凝土基樁，D={diameter}mm，施作深度{depth}公尺，實作深度{real_depth}公尺'
+
+    compare_dict2 = {
+        'MiddleColumn/DrilledPile/Count': ['CostBreakdownList', station, pile_path],
+        'MiddleColumn/DrilledPile/Strength': ['', 'CostBreakdownList', station, pile_path, '產品，預拌混凝土材料費', '材料費，', 'kgf/cm2'],
+        'MiddleColumn/DrilledPile/SteelCageWeight': ['CostBreakdownList', station, pile_path, '產品，鋼筋，SD420W'],
+    }
+    for key in list(compare_dict2.keys()):
+        compare_result[key] = []
+
+        key, budget_value = compare_budget(key, compare_dict2[key], budget_root)
+        compare_result[key].append([key, budget_value])
+        row = key, budget_value
+        writer.writerow(row)
 
 if __name__ == '__main__':
-    num_workItemType = 3
-    main(num_workItemType)
+    main()
