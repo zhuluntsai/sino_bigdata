@@ -119,7 +119,7 @@ def compare():
         for i, listbox in enumerate(type_multiple_select.listbox[1:]):
             select = listbox.curselection()
             for s in select:
-                group_array[s].append(i)
+                group_array[s].append(word2Xml.amount_type_list[i])
 
         word2Xml.group_array = group_array
 

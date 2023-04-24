@@ -123,8 +123,8 @@ def main():
         'RebarCage/Rebar/Total': ['CostBreakdownList', '連續壁，(含導溝，厚000cm)，TYPE S0', '產品，鋼筋，SD420W'],
         'EndPanel/Total': ['CostBreakdownList', '連續壁，(含導溝，厚000cm)，TYPE S0', '產品，金屬材料，鋼料，末端板，分隔板'],
         
-        'SupportGroup/SteelWeight': ['CostBreakdownList', station, '臨時擋土支撐工法，支撐系統之型鋼組立'],
-        'SupportGroup/SteelWeight2': ['CostBreakdownList', station, '臨時擋土支撐工法，支撐系統之型鋼拆除'],
+        'Total_SupFen': ['CostBreakdownList', station, '臨時擋土支撐工法，支撐系統之型鋼組立'],
+        'Total_SupFen2': ['CostBreakdownList', station, '臨時擋土支撐工法，支撐系統之型鋼拆除'],
         
         'MiddleColumn/Steel/TotalUpper': ['*', 'CostBreakdownList', station, '中間樁(柱)', '臨時擋土支撐工法，支撐系統之型鋼拆除', ''],
         'MiddleColumn/Steel/TotalLower': ['CostBreakdownList', station, '產品，結構用鋼材，H型鋼'],
@@ -138,6 +138,8 @@ def main():
         compare_result[f'TYPE {t}'] = {}
 
         for key in list(compare_dict.keys()):
+            if not any('TYPE' in v for v in compare_dict[key]):
+                t = type_list[0]
             budget_value = compare_budget(key, compare_dict[key], budget_root, t, thickness)
             compare_result[f'TYPE {t}'][key] = budget_value
             row = key, f'TYPE {t}', budget_value
@@ -151,12 +153,15 @@ def main():
 
     compare_dict2 = {
         'MiddleColumn/DrilledPile/Count': ['CostBreakdownList', station, pile_path],
-        'MiddleColumn/DrilledPile/Strength': ['', 'CostBreakdownList', station, pile_path, '產品，預拌混凝土材料費', '材料費，', 'kgf/cm2'],
-        'MiddleColumn/DrilledPile/SteelCageWeight': ['CostBreakdownList', station, pile_path, '產品，鋼筋，SD420W'],
+        'MiddleColumn/DrilledPile/Concrete/Strength': ['', 'CostBreakdownList', station, pile_path, '產品，預拌混凝土材料費', '材料費，', 'kgf/cm2'],
+        'MiddleColumn/RebarCage/Total': ['CostBreakdownList', station, pile_path, '產品，鋼筋，SD420W'],
     }
     for t, thickness in zip(type_list, thickness_list):
+        t = type_list[0]
         for key in list(compare_dict2.keys()):
             budget_value = compare_budget(key, compare_dict2[key], budget_root, t, thickness)
+            if key == 'MiddleColumn/RebarCage/Total':
+                budget_value = float(compare_result[f'TYPE {t}']['MiddleColumn/DrilledPile/Count']) * float(budget_value)
             compare_result[f'TYPE {t}'][key] = budget_value
             row = key, f'TYPE {t}', budget_value
             writer.writerow(row)
