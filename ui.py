@@ -48,21 +48,20 @@ class fileSaveAs(fileSelect):
         self.filePath.set(file_selected)
         self.textbox.configure(foreground='black')
     
-class thresholdTextbox(tk.Frame):
-    def __init__(self, parent, label):
+class valueTextbox(tk.Frame):
+    def __init__(self, parent, label, default):
         tk.Frame.__init__(self, parent)
     
         self.label = tk.Label(self, text=label, width=10)
         self.label.grid(row=0, column=0)
 
-        self.threshold = 0.01
-        self.textbox = tk.Entry(self, textvariable=self.threshold, width=10)
-        self.textbox.insert(0, self.threshold)
+        self.textbox = tk.Entry(self, textvariable=default, width=10)
+        self.textbox.insert(0, default)
 
         self.textbox.grid(row=0, column=1)
 
     @property
-    def threshold_textbox(self):
+    def value(self):
         return self.textbox.get()
     
 class typeMultipleSelect(tk.Frame):
@@ -100,7 +99,8 @@ def compare():
     schemaName = schemaName_select.file_path
     budget_path = budget_path_select.file_path
     output_path = output_path_select.file_path
-    threshold = float(threshold_textbox.threshold_textbox)
+    threshold = float(threshold_textbox.value)
+    station_code = station_code_textbox.value
     treeName = 'tree.xml'
 
     prefix = '/home/user/Documents/weilun/sinotech/'
@@ -132,15 +132,16 @@ def compare():
         budget_path=budget_path,
         output_path=output_path,
         treeName=treeName,
-        threshold=threshold)
+        threshold=threshold,
+        station_code=station_code,)
 
     print(f'比對報告已儲存在 {output_path}') 
 
     # if amount of word and excel doesn't match, add compare button
     if not word2Xml.is_pass:
         type_multiple_select = typeMultipleSelect(root, amount_type_list=word2Xml.amount_type_list, middle_type_list=word2Xml.middle_type_list)
-        type_multiple_select.grid(row=8, pady=5)
-        compare_button.grid(row=9, pady=5, ipadx=50)
+        type_multiple_select.grid(row=9, pady=5)
+        compare_button.grid(row=10, pady=5, ipadx=50)
         root.update()
 
         word2Xml.is_pass = True        
@@ -163,11 +164,14 @@ budget_path_select.grid(row=4, pady=2)
 output_path_select = fileSaveAs(root, '輸出路徑', 'csv')
 output_path_select.grid(row=5, pady=2)
 
-threshold_textbox = thresholdTextbox(root, 'Threshold')
+threshold_textbox = valueTextbox(root, 'Threshold', 0.01)
 threshold_textbox.grid(row=6, pady=2)
 
+station_code_textbox = valueTextbox(root, 'Station code', 'LG09')
+station_code_textbox.grid(row=7, pady=2)
+
 compare_button = tk.Button(root, text="文件比對", command=compare)
-compare_button.grid(row=7, pady=10, ipadx=50)
+compare_button.grid(row=8, pady=10, ipadx=50)
 
 box_list = []
 word2Xml = Word2Xml()
