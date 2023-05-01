@@ -4,6 +4,7 @@ import tkinter.ttk as ttk
 from tkinter import filedialog
 import os
 from word2xml import Word2Xml
+from tkinter.messagebox import showinfo
 
 root = tk.Tk()
 root.title('文件比對程式')
@@ -89,6 +90,9 @@ class typeMultipleSelect(tk.Frame):
     @property
     def combo_box(self):
         return self.combobox.get()
+    
+def popup_bonus():
+    showinfo("注意", "支撐連續壁數量不一致，需要自行進行 TYPE 對應")
 
 def compare():
     global type_multiple_select
@@ -143,6 +147,8 @@ def compare():
         type_multiple_select.grid(row=9, pady=5)
         compare_button.grid(row=10, pady=5, ipadx=50)
         root.update()
+
+        popup_bonus()
 
         word2Xml.is_pass = True        
 

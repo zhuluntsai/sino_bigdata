@@ -13,6 +13,7 @@ def compare(w2x):
     output_path = 'report3.csv'
     treeName = 'tree.xml'
     threshold = 0.05
+    station_code = 'LG09'
 
     if w2x.is_pass != -1:
         group_array = [[] for _ in range(len(w2x.middle_type_list))]
@@ -33,7 +34,8 @@ def compare(w2x):
         budget_path=budget_path,
         output_path=output_path,
         treeName=treeName,
-        threshold=threshold)
+        threshold=threshold,
+        station_code=station_code,)
 
     print(w2x.amount_type_list)
     print(w2x.middle_type_list)
