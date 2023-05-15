@@ -39,8 +39,9 @@ class fileSelect(tk.Frame):
 
     def setFilePath(self):
         file_selected = filedialog.askopenfilename(parent=root, filetypes=(('', f'*.{self.ext}'), ))
-        self.filePath.set(file_selected)
-        self.textbox.configure(foreground='black')
+        if len(file_selected) != 0:
+            self.filePath.set(file_selected)
+            self.textbox.configure(foreground='black')
 
     @property
     def file_path(self):
