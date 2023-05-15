@@ -11,6 +11,15 @@ root.title('文件比對程式')
 root.geometry('+300+300')
 root.grid_columnconfigure(0, weight=1)
 
+tab_parent = ttk.Notebook(root)
+tab1 = ttk.Frame(tab_parent)
+tab2 = ttk.Frame(tab_parent)
+
+tab_parent.add(tab1, text="設計階段")
+tab_parent.add(tab2, text="完整功能")
+
+tab_parent.pack(expand=1, fill="both")
+
 # https://stackoverflow.com/questions/73658643/bind-button-open-file-dialog-to-a-text-field-in-tkinter
 class fileSelect(tk.Frame):
     def __init__(self, parent, fileDescription='', ext=''):
@@ -57,6 +66,7 @@ class valueTextbox(tk.Frame):
         self.label.grid(row=0, column=0)
 
         self.textbox = tk.Entry(self, textvariable=default, width=10)
+        self.textbox.delete(0, 100)
         self.textbox.insert(0, default)
 
         self.textbox.grid(row=0, column=1)
@@ -90,21 +100,45 @@ class typeMultipleSelect(tk.Frame):
     @property
     def combo_box(self):
         return self.combobox.get()
-    
-def popup_bonus():
-    showinfo("注意", "支撐連續壁數量不一致，需要自行進行 TYPE 對應")
 
-def compare():
+def compare1():
     global type_multiple_select
 
-    wordName = wordName_select.file_path
-    excelName = excelName_select.file_path
-    drawing_schema = drawing_schema_select.file_path
-    schemaName = schemaName_select.file_path
-    budget_path = budget_path_select.file_path
-    output_path = output_path_select.file_path
-    threshold = float(threshold_textbox.value)
-    station_code = station_code_textbox.value
+    wordName = wordName_select1.file_path
+    excelName = excelName_select2.file_path
+    drawing_schema = drawing_schema_select1.file_path
+    schemaName = schemaName_select1.file_path
+    budget_path = budget_path_select2.file_path
+    output_path = output_path_select1.file_path
+    threshold = float(threshold_textbox1.value)
+    station_code = station_code_textbox1.value
+    treeName = 'tree.xml'
+
+    word2Xml.export_report(
+        wordName=wordName, 
+        excelName=excelName,
+        schemaName=schemaName,
+        drawing_schema=drawing_schema,
+        budget_path=budget_path,
+        output_path=output_path,
+        treeName=treeName,
+        threshold=threshold,
+        station_code=station_code,)
+
+    print(f'比對報告已儲存在 {output_path}')  
+    showinfo("注意", f'比對報告已儲存在 {output_path}')  
+
+def compare2():
+    global type_multiple_select
+
+    wordName = wordName_select2.file_path
+    excelName = excelName_select2.file_path
+    drawing_schema = drawing_schema_select2.file_path
+    schemaName = schemaName_select2.file_path
+    budget_path = budget_path_select2.file_path
+    output_path = output_path_select2.file_path
+    threshold = float(threshold_textbox2.value)
+    station_code = station_code_textbox2.value
     treeName = 'tree.xml'
 
     prefix = '/home/user/Documents/weilun/sinotech/'
@@ -139,45 +173,71 @@ def compare():
         threshold=threshold,
         station_code=station_code,)
 
-    print(f'比對報告已儲存在 {output_path}') 
+    if word2Xml.is_pass:
+        print(f'比對報告已儲存在 {output_path}') 
+        showinfo("注意", f'比對報告已儲存在 {output_path}')
+
 
     # if amount of word and excel doesn't match, add compare button
     if not word2Xml.is_pass:
-        type_multiple_select = typeMultipleSelect(root, amount_type_list=word2Xml.amount_type_list, middle_type_list=word2Xml.middle_type_list)
+        type_multiple_select = typeMultipleSelect(tab2, amount_type_list=word2Xml.amount_type_list, middle_type_list=word2Xml.middle_type_list)
         type_multiple_select.grid(row=9, pady=5)
-        compare_button.grid(row=10, pady=5, ipadx=50)
-        root.update()
+        compare_button2.grid(row=10, pady=5, ipadx=50)
+        tab2.update()
+        showinfo("注意", "支撐連續壁數量不一致，需要自行進行 TYPE 對應")
 
-        popup_bonus()
+        word2Xml.is_pass = True    
 
-        word2Xml.is_pass = True        
 
-wordName_select = fileSelect(root, '設計計算書', 'docx')
-wordName_select.grid(row=0, pady=5)
+wordName_select1 = fileSelect(tab1, '設計計算書', 'docx')
+wordName_select1.grid(row=0, pady=5)
 
-excelName_select = fileSelect(root, '數量計算書', 'xls')
-excelName_select.grid(row=1, pady=2)
+drawing_schema_select1 = fileSelect(tab1, '設計圖說', 'xml')
+drawing_schema_select1.grid(row=2, pady=2)   
 
-drawing_schema_select = fileSelect(root, '設計圖說', 'xml')
-drawing_schema_select.grid(row=2, pady=2)
+schemaName_select1 = fileSelect(tab1, 'Schema', 'xml')
+schemaName_select1.grid(row=3, pady=2)
 
-schemaName_select = fileSelect(root, 'Schema', 'xml')
-schemaName_select.grid(row=3, pady=2)
+output_path_select1 = fileSaveAs(tab1, '輸出路徑', 'csv')
+output_path_select1.grid(row=5, pady=2)
 
-budget_path_select = fileSelect(root, '預算書', 'xml')
-budget_path_select.grid(row=4, pady=2)
+threshold_textbox1 = valueTextbox(tab1, 'Threshold', 0.01)
+threshold_textbox1.grid(row=6, pady=2)
 
-output_path_select = fileSaveAs(root, '輸出路徑', 'csv')
-output_path_select.grid(row=5, pady=2)
+station_code_textbox1 = valueTextbox(tab1, 'Station code', 'LG09')
+station_code_textbox1.grid(row=7, pady=2)
 
-threshold_textbox = valueTextbox(root, 'Threshold', 0.01)
-threshold_textbox.grid(row=6, pady=2)
+compare_button1 = tk.Button(tab1, text="文件比對", command=compare1)
+compare_button1.grid(row=8, pady=10, ipadx=50)
 
-station_code_textbox = valueTextbox(root, 'Station code', 'LG09')
-station_code_textbox.grid(row=7, pady=2)
 
-compare_button = tk.Button(root, text="文件比對", command=compare)
-compare_button.grid(row=8, pady=10, ipadx=50)
+
+wordName_select2 = fileSelect(tab2, '設計計算書', 'docx')
+wordName_select2.grid(row=0, pady=5)
+
+excelName_select2 = fileSelect(tab2, '數量計算書', 'xls')
+excelName_select2.grid(row=1, pady=2)
+
+drawing_schema_select2 = fileSelect(tab2, '設計圖說', 'xml')
+drawing_schema_select2.grid(row=2, pady=2)
+
+schemaName_select2 = fileSelect(tab2, 'Schema', 'xml')
+schemaName_select2.grid(row=3, pady=2)
+
+budget_path_select2 = fileSelect(tab2, '預算書', 'xml')
+budget_path_select2.grid(row=4, pady=2)
+
+output_path_select2 = fileSaveAs(tab2, '輸出路徑', 'csv')
+output_path_select2.grid(row=5, pady=2)
+
+threshold_textbox2 = valueTextbox(tab2, 'Threshold', 0.01)
+threshold_textbox2.grid(row=6, pady=2)
+
+station_code_textbox2 = valueTextbox(tab2, 'Station code', 'LG09')
+station_code_textbox2.grid(row=7, pady=2)
+
+compare_button2= tk.Button(tab2, text="文件比對", command=compare2)
+compare_button2.grid(row=8, pady=10, ipadx=50)
 
 box_list = []
 word2Xml = Word2Xml()
