@@ -115,7 +115,7 @@ def compare1():
     station_code = station_code_textbox1.value
     treeName = 'tree.xml'
 
-    word2Xml.export_report(
+    word2Xml1.export_report(
         wordName=wordName, 
         excelName=excelName,
         schemaName=schemaName,
@@ -142,28 +142,27 @@ def compare2():
     station_code = station_code_textbox2.value
     treeName = 'tree.xml'
 
-    prefix = '/home/user/Documents/weilun/sinotech/'
-    wordName = 'word-preprocess/data/LG09站地下擋土壁及支撐系統20221212圍囹正確版_修改換行符.docx'
-    excelName = 'word-preprocess/data/CQ881標LG09站地工數量-1111230更新.xls'
-    drawing_schema = 'word-preprocess/data/drawing_schema.xml'
-    schemaName = 'word-preprocess/data/schema.xml'
-    budget_path = 'word-preprocess/data/CQ881標土建工程CQ881-11-04_bp_rbid.xml'
-    output_path = 'report.csv'
-    treeName = 'tree.xml'
+    # prefix = '/home/user/Documents/weilun/sinotech/'
+    # wordName = 'word-preprocess/data/LG09站地下擋土壁及支撐系統20221212圍囹正確版_修改換行符.docx'
+    # excelName = 'word-preprocess/data/CQ881標LG09站地工數量-1111230更新.xls'
+    # drawing_schema = 'word-preprocess/data/drawing_schema.xml'
+    # schemaName = 'word-preprocess/data/schema.xml'
+    # budget_path = 'word-preprocess/data/CQ881標土建工程CQ881-11-04_bp_rbid.xml'
+    # output_path = 'report.csv'
+    # treeName = 'tree.xml'
     
 
-    print(word2Xml.is_pass)
-    if word2Xml.is_pass != -1:
-        group_array = [[] for _ in range(len(word2Xml.middle_type_list))]
+    if word2Xml2.is_pass != -1:
+        group_array = [[] for _ in range(len(word2Xml2.middle_type_list))]
         for i, listbox in enumerate(type_multiple_select.listbox[1:]):
             select = listbox.curselection()
             for s in select:
-                group_array[s].append(word2Xml.amount_type_list[i])
+                group_array[s].append(word2Xml2.amount_type_list[i])
 
-        word2Xml.group_array = group_array
+        word2Xml2.group_array = group_array
 
     # os.system(f'python word2xml.py --word_path {wordName} --excel_path {excelName} --schema_path {schemaName} --budget_path {budget_path} --output_path {output_path} --tree_path {treeName}')
-    word2Xml.export_report(
+    word2Xml2.export_report(
         wordName=wordName, 
         excelName=excelName,
         schemaName=schemaName,
@@ -174,20 +173,20 @@ def compare2():
         threshold=threshold,
         station_code=station_code,)
 
-    if word2Xml.is_pass:
+    if word2Xml2.is_pass:
         print(f'比對報告已儲存在 {output_path}') 
         showinfo("注意", f'比對報告已儲存在 {output_path}')
 
 
     # if amount of word and excel doesn't match, add compare button
-    if not word2Xml.is_pass:
+    if not word2Xml2.is_pass:
         type_multiple_select = typeMultipleSelect(tab2, amount_type_list=word2Xml.amount_type_list, middle_type_list=word2Xml.middle_type_list)
         type_multiple_select.grid(row=9, pady=5)
         compare_button2.grid(row=10, pady=5, ipadx=50)
         tab2.update()
         showinfo("注意", "支撐連續壁數量不一致，需要自行進行 TYPE 對應")
 
-        word2Xml.is_pass = True    
+        word2Xml2.is_pass = True    
 
 
 wordName_select1 = fileSelect(tab1, '設計計算書', 'docx')
@@ -241,7 +240,8 @@ compare_button2= tk.Button(tab2, text="文件比對", command=compare2)
 compare_button2.grid(row=8, pady=10, ipadx=50)
 
 box_list = []
-word2Xml = Word2Xml()
+word2Xml1 = Word2Xml()
+word2Xml2 = Word2Xml()
 
 root.mainloop()
 
