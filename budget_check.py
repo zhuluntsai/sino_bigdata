@@ -101,6 +101,7 @@ def find_thickness(budget_root, type_list):
     return [ find_budget([v.replace('TYPE S0', t) if 'TYPE' in v else v for v in value], budget_root) for t in type_list ]
 
 def read_budget(budgetFile, budget_path, station_code):
+    print('抓取預算書')
     budget_root = ET.parse(budget_path).getroot()
 
     station = f'開挖支撐及保護，{station_code}站'
@@ -164,7 +165,5 @@ def read_budget(budgetFile, budget_path, station_code):
             compare_result_dict[f'TYPE {t}'][key] = budget_value
             budgetFile.find(f"./*[@TYPE='{t}']").find(key + '/Value').text = str(budget_value)
 
+    print('預算書抓取完成')
     return type_list, thickness_list, compare_dict
-
-if __name__ == '__main__':
-    read_budget()

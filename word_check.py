@@ -45,10 +45,19 @@ def find_type_drawing(drawing_schema):
     return len(type_list), count_blank, type_list
 
 def read_word(wordName, drawing_schema, designFile):
+    print('抓取設計計算書')
     doc = docx.Document(wordName)
     num_workItemType_design = 0
+    count = 0
+    count_blank = 0
+    sheet_list = []
 
-    count, count_blank, sheet_list = find_type_drawing(drawing_schema)
+    try:
+        count, count_blank, sheet_list = find_type_drawing(drawing_schema)
+    except:
+        print('無法從設計圖說schema抓取type資訊')
+        return
+
     num_workItemType_design = count
 
     for i in range(num_workItemType_design - 1):
@@ -310,4 +319,5 @@ def read_word(wordName, drawing_schema, designFile):
             #print('設計', value.get('unit'), value.text)
             value.text = arr[i]
 
+    print('設計計算書抓取完成')
     return num_workItemType_design

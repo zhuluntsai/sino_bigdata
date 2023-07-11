@@ -73,7 +73,7 @@ def check_regulation(self):
         key = '混凝土強度'
         description = '第03010章\n水中混凝土：245kgf/cm2等級混凝土'
         _, quantity, _, budget = self.get_value(self.key_dict, key, self.type_list[0])
-        drawing = self.get_concrete_strength(self.drawing_schema, self.key_dict[key])[0]
+        drawing = self.concrete_strength[0]
         strength_compare_result = self.value_compare('', [drawing, quantity, budget])
         row = [key, '', description, '', quantity, drawing, budget, strength_compare_result]
         writer.writerow(row)

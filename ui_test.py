@@ -4,21 +4,28 @@ from word2xml import Word2Xml
 def compare(w2x):
     global type_multiple_select
 
-    prefix = '/home/user/Documents/weilun/sinotech/'
     wordName = 'word-preprocess/data/LG09站地下擋土壁及支撐系統20221212圍囹正確版_修改換行符.docx'
+    # wordName = '請選擇'
     excelName = 'word-preprocess/data/CQ881標LG09站地工數量-1111230更新.xls'
     drawing_schema = 'word-preprocess/data/drawing_schema.xml'
+    # drawing_schema = '請選擇'
     schemaName = 'word-preprocess/data/schema.xml'
     budget_path = 'word-preprocess/data/CQ881標土建工程CQ881-11-04_bp_rbid.xml'
     output_path = 'report3.csv'
     treeName = 'tree.xml'
     threshold = 0.05
     station_code = 'LG09'
+    input_list = [(0, ), (0, ), (1, )]
+
+    # wordName = 'LG10測試檔/01-設計計算書/03-2.LG10站地下擋土壁及支撐系統_取代.docx'
+    # # drawing_schema = 'LG10測試檔/02-設計圖說/LG10_drawing_result.xml'
+    # drawing_schema = 'word-preprocess/data/LG10_drawing_schema.xml'
+    # excelName = 'LG10測試檔/(已修改支撐TYPE)0080B-CQ881標LG10站地工數量-1100406.xls'
+    # excelName = 'LG10測試檔/(已修改支撐TYPE、調整中間樁TYPE)0080B-CQ881標LG10站地工數量-1100406.xls'
+    # input_list = [(0, )]
 
     if w2x.is_pass != -1:
         group_array = [[] for _ in range(len(w2x.middle_type_list))]
-        input_list = [(0, ), (0, ), (1, )]
-        # input_list = [(0, ), (0, ), (0, ), (2, )]
         for i, select in enumerate(input_list):
             for s in select:
                 group_array[s].append(w2x.amount_type_list[i])
@@ -37,14 +44,15 @@ def compare(w2x):
         threshold=threshold,
         station_code=station_code,)
 
-    print(w2x.amount_type_list)
-    print(w2x.middle_type_list)
-    print(f'比對報告已儲存在 {output_path}') 
+    if w2x.is_pass:
+        print(f'比對報告已儲存在 {output_path}') 
 
     # if amount of word and excel doesn't match, add compare button
     if not w2x.is_pass:
         # type_multiple_select = typeMultipleSelect(root, amount_type_list=word2Xml.amount_type_list, middle_type_list=word2Xml.middle_type_list)
 
+        print(w2x.middle_type_list)
+        print(w2x.amount_type_list)
         w2x.is_pass = True 
         return w2x       
 

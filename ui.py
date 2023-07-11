@@ -56,6 +56,8 @@ class fileSaveAs(fileSelect):
     
     def setFilePath(self):
         file_selected = filedialog.asksaveasfilename(filetypes=(('', f'*.{self.ext}'), ))
+        if 'csv' not in file_selected:
+            file_selected += '.csv'
         self.filePath.set(file_selected)
         self.textbox.configure(foreground='black')
     
@@ -180,7 +182,7 @@ def compare2():
 
     # if amount of word and excel doesn't match, add compare button
     if not word2Xml2.is_pass:
-        type_multiple_select = typeMultipleSelect(tab2, amount_type_list=word2Xml.amount_type_list, middle_type_list=word2Xml.middle_type_list)
+        type_multiple_select = typeMultipleSelect(tab2, amount_type_list=word2Xml2.amount_type_list, middle_type_list=word2Xml2.middle_type_list)
         type_multiple_select.grid(row=9, pady=5)
         compare_button2.grid(row=10, pady=5, ipadx=50)
         tab2.update()
@@ -204,8 +206,8 @@ output_path_select1.grid(row=5, pady=2)
 threshold_textbox1 = valueTextbox(tab1, 'Threshold', 0.01)
 threshold_textbox1.grid(row=6, pady=2)
 
-station_code_textbox1 = valueTextbox(tab1, 'Station code', 'LG09')
-station_code_textbox1.grid(row=7, pady=2)
+# station_code_textbox1 = valueTextbox(tab1, 'Station code', 'LG09')
+# station_code_textbox1.grid(row=7, pady=2)
 
 compare_button1 = tk.Button(tab1, text="文件比對", command=compare1)
 compare_button1.grid(row=8, pady=10, ipadx=50)

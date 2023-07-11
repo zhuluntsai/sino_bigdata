@@ -38,6 +38,7 @@ def find_value(value, front, back):
     return value.split(front)[-1].split(back)[0].strip()
 
 def read_excel(self, excelName, quantityFile, regulationFile, num_workItemType_design):
+    print('抓取數量計算書')
     excel = xlrd.open_workbook(excelName)
     num_workItemType_quantity = 0
     list_workItemType_quantity = []
@@ -51,7 +52,7 @@ def read_excel(self, excelName, quantityFile, regulationFile, num_workItemType_d
         type_list = []
         
         sheet = excel.sheet_by_name(sheetName)
-        for row in range(8,sheet.nrows):
+        for row in range(8, sheet.nrows):
             if str(sheet.cell_value(row, 1)).find(keyword)!=-1:
                 type_list.append(sheet.cell_value(row, 1))
                 count += 1 
@@ -757,8 +758,5 @@ def read_excel(self, excelName, quantityFile, regulationFile, num_workItemType_d
         except:
             pass
 
+    print('數量計算書抓取完成')
     return concrete_list, concrete_type_list, list_workItemType_quantity
-
-
-if __name__ == '__main__':
-    read_excel()
