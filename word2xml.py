@@ -269,31 +269,31 @@ class Word2Xml():
                         writer.writerow(row)
 
             ### IN CONSTRUCTION
-            print(self.quantityFile[1].find('SupportGroup')[0].tag)
-            print(self.quantityFile[1].find('SupportGroup')[0].find('Type/Value').text)
-            for i in range(len(self.group_array)):
-                
-                for j in range(len(self.designFile[i].find('SupportGroup').findall('Support'))):
-                    print(self.group_array[i][0])
-                    try:
-                        designSup = self.designFile[i].find('SupportGroup')[j]
-                        quantitySup = self.quantityFile[i].find('SupportGroup')[j]
-                        print('i', i, 'j', j, 'designSup: ', designSup, 'quantitySup: ', quantitySup)
-                        print('designSup: ', designSup.find('Count/Value').text, 'quantitySup: ', quantitySup.find('Type/Value').text)
-                        writer.writerow(['支撐層次','TYPE S'+str(i+1),designSup.find('Layer/Value').text,'TYPE S'+str(i+1),quantitySup.find('Layer/Value').text])
-                        writer.writerow(['支撐桿件','TYPE S'+str(i+1),designSup.find('Type/Value').text,'TYPE S'+str(i+1),quantitySup.find('Type/Value').text,designSup.find('Type/Value').text==quantitySup.find('Type/Value').text])
-                        writer.writerow(['支撐支數','TYPE S'+str(i+1),designSup.find('Count/Value').text,'TYPE S'+str(i+1),quantitySup.find('Count/Value').text,float(designSup.find('Count/Value').text)==float(quantitySup.find('Count/Value').text)])
-                    except:
-                        # print(i, j)
-                        pass
-
+            # print(self.quantityFile[1].find('SupportGroup')[0].tag)
+            # print(self.quantityFile[1].find('SupportGroup')[0].find('Type/Value').text)
             # for i in range(len(self.group_array)):
-            #     for j in range(len(self.designFile[self.group_array[i][0]].find('FenceGroup').findall('Fence'))):
-            #         designSup = self.designFile[self.group_array[i][0]].find('FenceGroup')[j]
-            #         quantitySup = self.quantityFile[self.group_array[i][0]].find('FenceGroup')[j]
-            #         writer.writerow(['圍囹層次','TYPE S'+str(self.group_array[i][0]+1),designSup.find('Layer/Value').text,'TYPE S'+str(self.group_array[i][0]+1),quantitySup.find('Layer/Value').text,float(designSup.find('Layer/Value').text)==float(quantitySup.find('Layer/Value').text)])
-            #         writer.writerow(['圍囹桿件','TYPE S'+str(self.group_array[i][0]+1),designSup.find('Type/Value').text,'TYPE S'+str(self.group_array[i][0]+1),quantitySup.find('Type/Value').text,designSup.find('Type/Value').text==quantitySup.find('Type/Value').text])
-            #         writer.writerow(['圍囹支數','TYPE S'+str(self.group_array[i][0]+1),designSup.find('Count/Value').text,'TYPE S'+str(self.group_array[i][0]+1),quantitySup.find('Count/Value').text,float(designSup.find('Count/Value').text)==float(quantitySup.find('Count/Value').text)])
+                
+            #     for j in range(len(self.designFile[i].find('SupportGroup').findall('Support'))):
+            #         print(self.group_array[i][0])
+            #         try:
+            #             designSup = self.designFile[i].find('SupportGroup')[j]
+            #             quantitySup = self.quantityFile[i].find('SupportGroup')[j]
+            #             print('i', i, 'j', j, 'designSup: ', designSup, 'quantitySup: ', quantitySup)
+            #             print('designSup: ', designSup.find('Count/Value').text, 'quantitySup: ', quantitySup.find('Type/Value').text)
+            #             writer.writerow(['支撐層次','TYPE S'+str(i+1),designSup.find('Layer/Value').text,'TYPE S'+str(i+1),quantitySup.find('Layer/Value').text])
+            #             writer.writerow(['支撐桿件','TYPE S'+str(i+1),designSup.find('Type/Value').text,'TYPE S'+str(i+1),quantitySup.find('Type/Value').text,designSup.find('Type/Value').text==quantitySup.find('Type/Value').text])
+            #             writer.writerow(['支撐支數','TYPE S'+str(i+1),designSup.find('Count/Value').text,'TYPE S'+str(i+1),quantitySup.find('Count/Value').text,float(designSup.find('Count/Value').text)==float(quantitySup.find('Count/Value').text)])
+            #         except:
+            #             # print(i, j)
+            #             pass
+
+            # # for i in range(len(self.group_array)):
+            # #     for j in range(len(self.designFile[self.group_array[i][0]].find('FenceGroup').findall('Fence'))):
+            # #         designSup = self.designFile[self.group_array[i][0]].find('FenceGroup')[j]
+            # #         quantitySup = self.quantityFile[self.group_array[i][0]].find('FenceGroup')[j]
+            # #         writer.writerow(['圍囹層次','TYPE S'+str(self.group_array[i][0]+1),designSup.find('Layer/Value').text,'TYPE S'+str(self.group_array[i][0]+1),quantitySup.find('Layer/Value').text,float(designSup.find('Layer/Value').text)==float(quantitySup.find('Layer/Value').text)])
+            # #         writer.writerow(['圍囹桿件','TYPE S'+str(self.group_array[i][0]+1),designSup.find('Type/Value').text,'TYPE S'+str(self.group_array[i][0]+1),quantitySup.find('Type/Value').text,designSup.find('Type/Value').text==quantitySup.find('Type/Value').text])
+            # #         writer.writerow(['圍囹支數','TYPE S'+str(self.group_array[i][0]+1),designSup.find('Count/Value').text,'TYPE S'+str(self.group_array[i][0]+1),quantitySup.find('Count/Value').text,float(designSup.find('Count/Value').text)==float(quantitySup.find('Count/Value').text)])
 
         
         if '請選擇' not in excelName and '請選擇' not in drawing_schema and '請選擇' not in budget_path:

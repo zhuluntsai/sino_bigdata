@@ -87,6 +87,8 @@ def compare_budget(key, value, budget_root, t='', thickness=''):
         budget_value = float(budget_value) / 100
     elif key == 'MiddleColumn/DrilledPile/Diameter':
         budget_value = float(budget_value) / 10
+    elif key == 'RebarCageGroup/RebarCage/Strength':
+        budget_value = find_value(budget_value, 'SD', 'W') + '0'
 
     return budget_value
 
@@ -140,10 +142,12 @@ def read_budget(budgetFile, budget_path, station_code):
 
         for key in list(compare_dict.keys()):
             if not any('TYPE' in v for v in compare_dict[key]):
-                t = type_list[0]
-            budget_value = compare_budget(key, compare_dict[key], budget_root, t, thickness)
-            compare_result_dict[f'TYPE {t}'][key] = budget_value
-            budgetFile.find(f"./*[@TYPE='{t}']").find(key + '/Value').text = str(budget_value)
+                temp_t = type_list[0]
+            else:
+                temp_t = t
+            budget_value = compare_budget(key, compare_dict[key], budget_root, temp_t, thickness)
+            compare_result_dict[f'TYPE {temp_t}'][key] = budget_value
+            budgetFile.find(f"./*[@TYPE='{temp_t}']").find(key + '/Value').text = str(budget_value)
 
     first_type = compare_result_dict[f'TYPE {type_list[0]}']
     diameter = int(first_type['MiddleColumn/DrilledPile/Diameter']*10)
