@@ -81,7 +81,7 @@ def check_regulation(self):
         key = '鋼筋強度'
         path = 'RebarCageGroup/RebarCage/Strength'
         description = '第3210章\n鋼筋\n頁碼：03210-4'
-        drawing = self.get_concrete_strength(self.drawing_schema, 'Rebar/Strength')[0]
+        drawing = self.get_strength(self.drawing_schema)['Rebar'][0]
         budget_list = get_budget_list(self.compare_dict, self.budget_path, self.type_list, self.thickness_list, path)
         for t, budget in zip(self.type_list, budget_list):
             _, quantity, _, _ = self.get_value(self.key_dict, key, t)

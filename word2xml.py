@@ -30,6 +30,7 @@ class Word2Xml():
         self.thickness_list = []
         self.compare_dict = {}
         self.concrete_strength = []
+        self.rebar_strength = []
 
         self.wordName = ''
         self.excelName = ''
@@ -72,18 +73,21 @@ class Word2Xml():
             # '導溝行徑米': 'GuideWall/Total',
         }
 
-    def get_concrete_strength(self, drawing_schema, drawing_shema_path):
+    def get_strength(self, drawing_schema):
         drawing_schema_root = ET.parse(drawing_schema).getroot()
-        concrete_strength = []
-        for i in range(1, 5, 1):
-            path = drawing_shema_path.replace('Strength', f'Strength{i}')
-            try:
-                value = drawing_schema_root.find(f"File/[@Description='設計圖說']/Drawing[@Description='結構一般説明']/{path}/Value").text
-                concrete_strength.append(value)
-            except:
-                pass
+        strength_dict = {'Concrete': [],
+                         'Rebar': [],
+                        }
+        for key in strength_dict.keys():
+            for i in range(1, 5, 1):
+                path = key + f'/Strength{i}'
+                try:
+                    value = drawing_schema_root.find(f"File/[@Description='設計圖說']/Drawing[@Description='結構一般説明']/{path}/Value").text
+                    strength_dict[key].append(value)
+                except:
+                    pass
 
-        return concrete_strength
+        return strength_dict
 
     def value_compare(self, key, value):
         # flatten
@@ -131,7 +135,7 @@ class Word2Xml():
             drawing_schema_root = ET.parse(self.drawing_schema).getroot()
             drawing_value = []
 
-            for drawing in ['立面圖', '配筋圖', '平面圖', '結構一般説明']:
+            for drawing in ['立面圖', '配筋圖', '平面圖']:
                 value = find_drawing(drawing_schema_root, drawing, t, drawing_shema_path)
                 drawing_value.append(value)
 
@@ -218,7 +222,8 @@ class Word2Xml():
             tree.write(treeName)
 
         if '請選擇' not in drawing_schema:
-            self.concrete_strength = self.get_concrete_strength(drawing_schema, self.key_dict['混凝土強度'])
+            strength_dict = self.get_strength(drawing_schema)
+            self.concrete_strength, self.rebar_strength = strength_dict['Concrete'], strength_dict['Rebar']
             try:
                 _, _, drawing_type_list = self.find_type_drawing(drawing_schema)
             except:
@@ -243,7 +248,7 @@ class Word2Xml():
         self.type_list = [t.replace('TYPE', 'Type') for t in self.type_list]
         with open(output_path, 'w', encoding='BIG5', newline='') as f:
             writer = csv.writer(f)
-            writer.writerow(["項目", 'TYPE', "設計計算書數值", "數量計算書數值", "立面圖", "配筋圖", "平面圖", "結構一般說明", "預算書數值", "是否一致", "備註"])
+            writer.writerow(["項目", 'TYPE', "設計計算書數值", "數量計算書數值", "立面圖", "配筋圖", "平面圖", "預算書數值", "是否一致", "備註"])
             for key in self.key_dict:
 
                 for t in self.type_list:
@@ -255,6 +260,8 @@ class Word2Xml():
                     # 圖說結構一般說明
                     if self.key_dict[key] == 'Concrete/Strength':
                         row.append(f'降階, 結構一般說明: {self.concrete_strength}')
+                    elif self.key_dict[key] == 'RebarCageGroup/RebarCage/Strength':
+                        row.append(f'結構一般說明: {self.rebar_strength}')
 
                     new_row = []
                     for v in row:
@@ -287,13 +294,13 @@ class Word2Xml():
             #             # print(i, j)
             #             pass
 
-            # # for i in range(len(self.group_array)):
-            # #     for j in range(len(self.designFile[self.group_array[i][0]].find('FenceGroup').findall('Fence'))):
-            # #         designSup = self.designFile[self.group_array[i][0]].find('FenceGroup')[j]
-            # #         quantitySup = self.quantityFile[self.group_array[i][0]].find('FenceGroup')[j]
-            # #         writer.writerow(['圍囹層次','TYPE S'+str(self.group_array[i][0]+1),designSup.find('Layer/Value').text,'TYPE S'+str(self.group_array[i][0]+1),quantitySup.find('Layer/Value').text,float(designSup.find('Layer/Value').text)==float(quantitySup.find('Layer/Value').text)])
-            # #         writer.writerow(['圍囹桿件','TYPE S'+str(self.group_array[i][0]+1),designSup.find('Type/Value').text,'TYPE S'+str(self.group_array[i][0]+1),quantitySup.find('Type/Value').text,designSup.find('Type/Value').text==quantitySup.find('Type/Value').text])
-            # #         writer.writerow(['圍囹支數','TYPE S'+str(self.group_array[i][0]+1),designSup.find('Count/Value').text,'TYPE S'+str(self.group_array[i][0]+1),quantitySup.find('Count/Value').text,float(designSup.find('Count/Value').text)==float(quantitySup.find('Count/Value').text)])
+            # for i in range(len(self.group_array)):
+            #     for j in range(len(self.designFile[self.group_array[i][0]].find('FenceGroup').findall('Fence'))):
+            #         designSup = self.designFile[self.group_array[i][0]].find('FenceGroup')[j]
+            #         quantitySup = self.quantityFile[self.group_array[i][0]].find('FenceGroup')[j]
+            #         writer.writerow(['圍囹層次','TYPE S'+str(self.group_array[i][0]+1),designSup.find('Layer/Value').text,'TYPE S'+str(self.group_array[i][0]+1),quantitySup.find('Layer/Value').text,float(designSup.find('Layer/Value').text)==float(quantitySup.find('Layer/Value').text)])
+            #         writer.writerow(['圍囹桿件','TYPE S'+str(self.group_array[i][0]+1),designSup.find('Type/Value').text,'TYPE S'+str(self.group_array[i][0]+1),quantitySup.find('Type/Value').text,designSup.find('Type/Value').text==quantitySup.find('Type/Value').text])
+            #         writer.writerow(['圍囹支數','TYPE S'+str(self.group_array[i][0]+1),designSup.find('Count/Value').text,'TYPE S'+str(self.group_array[i][0]+1),quantitySup.find('Count/Value').text,float(designSup.find('Count/Value').text)==float(quantitySup.find('Count/Value').text)])
 
         
         if '請選擇' not in excelName and '請選擇' not in drawing_schema and '請選擇' not in budget_path:
