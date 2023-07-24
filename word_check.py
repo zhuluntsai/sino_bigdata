@@ -30,21 +30,16 @@ def clean_string(s):
     
     return s
 
-def find_type_drawing(drawing_schema):
-    drawing_schema_root = ET.parse(drawing_schema).getroot()
-    type_list = []
-    count_blank = 0
+def clear_type(type_list):
+    new_type_list = []
+    for t in type_list:
+        t = t.split('-')[0].replace('TYPE', 'Type')
+        if t not in new_type_list:
+            new_type_list.append(t)
 
-    drawing = '立面圖'
-    for t in drawing_schema_root.find(f"File/[@Description='設計圖說']/Drawing[@Description='{drawing}']"):
-        type_list.append(t.attrib['Description'].replace('TYPE', 'Type').split('-')[0])
-        if "空打" in t.attrib['Description']:
-            count_blank += 1
+    return len(new_type_list), new_type_list
 
-    type_list = sorted(list(set(type_list)))
-    return len(type_list), count_blank, type_list
-
-def read_word(wordName, drawing_schema, designFile):
+def read_word(wordName, designFile, type_list):
     print('抓取設計計算書')
     doc = docx.Document(wordName)
     num_workItemType_design = 0
@@ -52,12 +47,7 @@ def read_word(wordName, drawing_schema, designFile):
     count_blank = 0
     sheet_list = []
 
-    try:
-        count, count_blank, sheet_list = find_type_drawing(drawing_schema)
-    except:
-        print('無法從設計圖說schema抓取type資訊')
-        return
-
+    count, sheet_list = clear_type(type_list)
     num_workItemType_design = count
 
     for i in range(num_workItemType_design - 1):
@@ -320,4 +310,4 @@ def read_word(wordName, drawing_schema, designFile):
             value.text = arr[i]
 
     print('設計計算書抓取完成')
-    return num_workItemType_design
+    return sheet_list, num_workItemType_design

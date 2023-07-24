@@ -7,15 +7,17 @@ def compare(w2x):
     wordName = 'word-preprocess/data/LG09站地下擋土壁及支撐系統20221212圍囹正確版_修改換行符.docx'
     # wordName = '請選擇'
     excelName = 'word-preprocess/data/CQ881標LG09站地工數量-1111230更新.xls'
+    # excelName = '請選擇'
     drawing_schema = 'word-preprocess/data/drawing_schema.xml'
     # drawing_schema = '請選擇'
-    schemaName = 'word-preprocess/data/schema.xml'
     budget_path = 'word-preprocess/data/CQ881標土建工程CQ881-11-04_bp_rbid.xml'
+    # budget_path = '請選擇'
+    schemaName = 'word-preprocess/data/schema.xml'
     output_path = 'report3.csv'
     treeName = 'tree.xml'
     threshold = 0.05
     station_code = 'LG09'
-    input_list = [(0, ), (0, ), (1, )]
+    input_list = [(0, ), (0, ), (1, ), ()]
 
     # wordName = 'LG10測試檔/01-設計計算書/03-2.LG10站地下擋土壁及支撐系統_取代.docx'
     # # drawing_schema = 'LG10測試檔/02-設計圖說/LG10_drawing_result.xml'
