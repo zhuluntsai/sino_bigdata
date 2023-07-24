@@ -229,14 +229,14 @@ schemaName_select2.grid(row=3, pady=2)
 budget_path_select2 = fileSelect(tab2, '預算書', 'xml')
 budget_path_select2.grid(row=4, pady=2)
 
+station_code_textbox2 = valueTextbox(tab2, 'Station code', 'LG09')
+station_code_textbox2.grid(row=5, pady=2)
+
 output_path_select2 = fileSaveAs(tab2, '輸出路徑', 'csv')
-output_path_select2.grid(row=5, pady=2)
+output_path_select2.grid(row=6, pady=2)
 
 threshold_textbox2 = valueTextbox(tab2, 'Threshold', 0.01)
-threshold_textbox2.grid(row=6, pady=2)
-
-station_code_textbox2 = valueTextbox(tab2, 'Station code', 'LG09')
-station_code_textbox2.grid(row=7, pady=2)
+threshold_textbox2.grid(row=7, pady=2)
 
 compare_button2= tk.Button(tab2, text="文件比對", command=compare2)
 compare_button2.grid(row=8, pady=10, ipadx=50)
