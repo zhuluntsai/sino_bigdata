@@ -87,7 +87,7 @@ def check_regulation(self):
             _, quantity, _, _ = self.get_value(self.key_dict, key, t)
             budget = f"{budget.split('產品，鋼筋，SD')[-1].split('W')[0].strip()}0"
             strength_compare_result = self.value_compare('', [drawing, quantity, budget])
-            row = [key, f'TYPE {t}', description, '', quantity, drawing, budget, strength_compare_result]
+            row = [key, f'{t}', description, '', quantity, drawing, budget, strength_compare_result]
             writer.writerow(row)
         
         writer.writerow(['項目', 'TYPE', '規範', "數量計算書混凝土", "數量計算書混凝土型式", "數量計算書混凝土TYPE", '預算書混凝土TYPE', "是否一致", "備註"])
@@ -99,7 +99,7 @@ def check_regulation(self):
             concrete_type = concrete_type_classification(concrete)
             budget_type = concrete_type_classification(budget_type)
             concrete_type_compare_result = self.value_compare('', [concrete_type, quantity_type, budget_type])
-            row = [key, f'TYPE {t}', description, concrete, concrete_type, quantity_type, budget_type, concrete_type_compare_result]
+            row = [key, f'{t}', description, concrete, concrete_type, quantity_type, budget_type, concrete_type_compare_result]
             writer.writerow(row)
 
 

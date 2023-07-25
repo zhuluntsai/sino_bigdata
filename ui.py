@@ -114,7 +114,7 @@ def compare1():
     budget_path = budget_path_select2.file_path
     output_path = output_path_select1.file_path
     threshold = float(threshold_textbox1.value)
-    station_code = station_code_textbox1.value
+    station_code = ''
     treeName = 'tree.xml'
 
     word2Xml1.export_report(
