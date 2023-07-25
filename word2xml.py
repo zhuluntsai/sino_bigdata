@@ -88,10 +88,18 @@ class Word2Xml():
         for key in strength_dict.keys():
             for i in range(1, 5, 1):
                 path = key + f'/Strength{i}'
+
+                # 結構一般說明
+                try:
+                    value = drawing_schema_root.find(f"File/[@Description='設計圖說']/Drawing[@Description='結構一般說明']/{path}/Value").text
+                    strength_dict[key].append(value)
+                except Exception as e:
+                    pass
+                # 結構一般説明
                 try:
                     value = drawing_schema_root.find(f"File/[@Description='設計圖說']/Drawing[@Description='結構一般説明']/{path}/Value").text
                     strength_dict[key].append(value)
-                except:
+                except Exception as e:
                     pass
 
         return strength_dict
@@ -252,7 +260,6 @@ class Word2Xml():
         if '請選擇' not in wordName:
             word_type_list, num_workItemType_design = read_word(wordName, self.designFile, self.type_list)
             tree.write(treeName)
-
         self.type_list = [t.replace('TYPE', 'Type') for t in self.type_list]
         with open(output_path, 'w', encoding='BIG5', newline='') as f:
             writer = csv.writer(f)
@@ -280,32 +287,35 @@ class Word2Xml():
                             new_row.append(v)
                     row = new_row
 
-                    if compare_result != 'NA':
-                        writer.writerow(row)
-
+                    if compare_result != 'NA' and compare_result != '':
+                        writer.writerow(row)   
+                     
             if '請選擇' not in wordName and '請選擇' not in excelName:
                 # print(self.quantityFile[1].find('SupportGroup')[0].tag)
                 # print(self.quantityFile[1].find('SupportGroup')[0].find('Type/Value').text)
                 # print(self.quantityFile[1].find('SupportGroup')[0].get('TYPE'))
 
                 for i in range(len(self.group_array)):
-                    type_value = self.group_array[i][0]
-                    # print("len(self.group_array) = " + str(len(self.group_array)))
-                    # print(type_value)
-                    for j in range(len(self.designFile.find(f"./*[@TYPE='{type_value}']").find('SupportGroup').findall('Support'))):
-                        # print("num_sup = " + str(len(self.designFile.find(f"./*[@TYPE='{type_value}']").find('SupportGroup').findall('Support'))))
-                        try:
-                            designSup = self.designFile[i].find('SupportGroup')[j]
-                            # quantitySup = self.quantityFile[i].find('SupportGroup')[j]
-                            quantitySup = self.quantityFile.find(f"./*[@TYPE='{type_value}']").find('SupportGroup')[j]
-                            # print('i', i, 'j', j, 'designSup: ', designSup, 'quantitySup: ', quantitySup)
-                            # print('designSup: ', designSup.find('Count/Value').text, 'quantitySup: ', quantitySup.find('Count/Value').text)
-                            writer.writerow(['支撐層次',type_value,designSup.find('Layer/Value').text,quantitySup.find('Layer/Value').text,'','','','',float(designSup.find('Layer/Value').text)==float(quantitySup.find('Layer/Value').text)])
-                            writer.writerow(['支撐桿件',type_value,designSup.find('Type/Value').text,quantitySup.find('Type/Value').text,'','','','',designSup.find('Type/Value').text==quantitySup.find('Type/Value').text])
-                            writer.writerow(['支撐支數',type_value,designSup.find('Count/Value').text,quantitySup.find('Count/Value').text,'','','','',float(designSup.find('Count/Value').text)==float(quantitySup.find('Count/Value').text)])
-                        except:
-                            # print(i, j)
-                            pass
+                    try:
+                        type_value = self.group_array[i][0]
+                        # print("len(self.group_array) = " + str(len(self.group_array)))
+                        # print(type_value)
+                        for j in range(len(self.designFile.find(f"./*[@TYPE='{type_value}']").find('SupportGroup').findall('Support'))):
+                            # print("num_sup = " + str(len(self.designFile.find(f"./*[@TYPE='{type_value}']").find('SupportGroup').findall('Support'))))
+                            try:
+                                designSup = self.designFile[i].find('SupportGroup')[j]
+                                # quantitySup = self.quantityFile[i].find('SupportGroup')[j]
+                                quantitySup = self.quantityFile.find(f"./*[@TYPE='{type_value}']").find('SupportGroup')[j]
+                                # print('i', i, 'j', j, 'designSup: ', designSup, 'quantitySup: ', quantitySup)
+                                # print('designSup: ', designSup.find('Count/Value').text, 'quantitySup: ', quantitySup.find('Count/Value').text)
+                                writer.writerow(['支撐層次',type_value,designSup.find('Layer/Value').text,quantitySup.find('Layer/Value').text,'','','','',float(designSup.find('Layer/Value').text)==float(quantitySup.find('Layer/Value').text)])
+                                writer.writerow(['支撐桿件',type_value,designSup.find('Type/Value').text,quantitySup.find('Type/Value').text,'','','','',designSup.find('Type/Value').text==quantitySup.find('Type/Value').text.strip()])
+                                writer.writerow(['支撐支數',type_value,designSup.find('Count/Value').text,quantitySup.find('Count/Value').text,'','','','',float(designSup.find('Count/Value').text)==float(quantitySup.find('Count/Value').text)])
+                            except:
+                                # print(i, j)
+                                pass
+                    except:
+                        pass
                 
                 for i in range(len(self.group_array)):
                     type_value = self.group_array[i][0]
@@ -320,7 +330,7 @@ class Word2Xml():
                             # print('i', i, 'j', j, 'designSup: ', designSup, 'quantitySup: ', quantitySup)
                             # print('designSup: ', designSup.find('Count/Value').text, 'quantitySup: ', quantitySup.find('Count/Value').text)
                             writer.writerow(['圍囹層次',type_value,designSup.find('Layer/Value').text,quantitySup.find('Layer/Value').text,'','','','',float(designSup.find('Layer/Value').text)==float(quantitySup.find('Layer/Value').text)])
-                            writer.writerow(['圍囹桿件',type_value,designSup.find('Type/Value').text,quantitySup.find('Type/Value').text,'','','','',designSup.find('Type/Value').text==quantitySup.find('Type/Value').text])
+                            writer.writerow(['圍囹桿件',type_value,designSup.find('Type/Value').text,quantitySup.find('Type/Value').text,'','','','',designSup.find('Type/Value').text==quantitySup.find('Type/Value').text.strip()])
                             writer.writerow(['圍囹支數',type_value,designSup.find('Count/Value').text,quantitySup.find('Count/Value').text,'','','','',float(designSup.find('Count/Value').text)==float(quantitySup.find('Count/Value').text)])
                         except:
                             # print(i, j)
@@ -329,50 +339,53 @@ class Word2Xml():
             if '請選擇' not in wordName and '請選擇' not in drawing_schema:
                 for key in self.rebar_dict:
                     for t in word_type_list:
-                        design_rebar = self.designFile.find(f"./*[@TYPE='{t}']").find(self.rebar_dict[key])
-                        design_rebar_length = len(design_rebar)
-                        drawing_rebar = ET.parse(self.drawing_schema).getroot().find(f"File/[@Description='設計圖說']/Drawing[@Description='配筋圖']/WorkItemType[@Description='{t.replace('Type', 'TYPE')}']/{self.rebar_dict[key].replace('RebarGroup/', '')}")
-                        drawing_rebar_length = len(drawing_rebar)
-                        
-                        for i in range(min(design_rebar_length, drawing_rebar_length)):
-                            for item_key in self.rebar_item_dict:
-                                item = self.rebar_item_dict[item_key]
-                                schema_path = f'{self.rebar_dict[key]}/Rebar/{item}'
-
-                                try:
-                                    design = self.designFile.find(f"./*[@TYPE='{t}']").find(schema_path + '/Value').text
-                                    if item_key == '設計':
-                                        design = design.replace(' ', '') + '0'
-                                except:
-                                    design = ''
-
-                                try:
-                                    if 'DepthStart' in schema_path:
-                                        schema_path = schema_path.replace('DepthStart', 'StartDepth')
-                                    elif 'DepthEnd' in schema_path:
-                                        schema_path = schema_path.replace('DepthEnd', 'EndDepth')
+                        try:
+                            design_rebar = self.designFile.find(f"./*[@TYPE='{t}']").find(self.rebar_dict[key])
+                            design_rebar_length = len(design_rebar)
+                            drawing_rebar = ET.parse(self.drawing_schema).getroot().find(f"File/[@Description='設計圖說']/Drawing[@Description='配筋圖']/WorkItemType[@Description='{t.replace('Type', 'TYPE')}']/{self.rebar_dict[key].replace('RebarGroup/', '')}")
+                            drawing_rebar_length = len(drawing_rebar)
+                            for i in range(min(design_rebar_length, drawing_rebar_length)):
+                                for item_key in self.rebar_item_dict:
+                                    item = self.rebar_item_dict[item_key]
+                                    schema_path = f'{self.rebar_dict[key]}/Rebar/{item}'
                                     
-                                    drawing = self.get_drawing(schema_path.replace('RebarGroup/', ''), t.replace('Type', 'TYPE'))
-                                except:
-                                    drawing = ''
+                                    try:
+                                        design = self.designFile.find(f"./*[@TYPE='{t}']").find(schema_path + '/Value').text
+                                        if item_key == '設計':
+                                            design = design.replace(' ', '') + '0'
+                                    except:
+                                        design = ''
 
-                                compare_result = self.value_compare(self.rebar_dict[key], [design, drawing]) 
-                                
-                                row = [key + item_key, f'{t}', design, '', drawing, '', compare_result]     
-                                new_row = []
-                                for v in row:
-                                    if isinstance(v, list):
-                                        for vv in v:
-                                            new_row.append(vv)
-                                    else:
-                                        new_row.append(v)
-                                row = new_row
+                                    try:
+                                        if 'DepthStart' in schema_path:
+                                            schema_path = schema_path.replace('DepthStart', 'StartDepth')
+                                        elif 'DepthEnd' in schema_path:
+                                            schema_path = schema_path.replace('DepthEnd', 'EndDepth')
+                                        
+                                        drawing = self.get_drawing(schema_path.replace('RebarGroup/', ''), t.replace('Type', 'TYPE'))
+                                    except:
+                                        drawing = ''
 
-                                if compare_result != 'NA':
-                                    writer.writerow(row)
+                                    compare_result = self.value_compare(self.rebar_dict[key], [design, drawing]) 
+                                    
+                                    row = [key + item_key, f'{t}', design, '', drawing, '', compare_result]     
+                                    new_row = []
+                                    for v in row:
+                                        if isinstance(v, list):
+                                            for vv in v:
+                                                new_row.append(vv)
+                                        else:
+                                            new_row.append(v)
+                                    row = new_row
+
+                                    if compare_result != 'NA':
+                                        writer.writerow(row)
+                        except Exception as e:
+                            # print(e)
+                            pass
         
         if '請選擇' not in excelName and '請選擇' not in drawing_schema and '請選擇' not in budget_path:
             try:
                 check_regulation(self)
             except Exception as e:
-                print(e)
+                pass

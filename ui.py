@@ -65,7 +65,7 @@ class valueTextbox(tk.Frame):
     def __init__(self, parent, label, default):
         tk.Frame.__init__(self, parent)
     
-        self.label = tk.Label(self, text=label, width=10)
+        self.label = tk.Label(self, text=label, width=20)
         self.label.grid(row=0, column=0)
 
         self.textbox = tk.Entry(self, textvariable=default, width=10)
@@ -161,6 +161,7 @@ def compare2():
             for s in select:
                 group_array[s].append(word2Xml2.amount_type_list[i])
 
+        group_array = [ g for g in group_array if len(g) != 0 ]
         word2Xml2.group_array = group_array
 
     # os.system(f'python word2xml.py --word_path {wordName} --excel_path {excelName} --schema_path {schemaName} --budget_path {budget_path} --output_path {output_path} --tree_path {treeName}')
@@ -203,7 +204,7 @@ schemaName_select1.grid(row=3, pady=2)
 output_path_select1 = fileSaveAs(tab1, '輸出路徑', 'csv')
 output_path_select1.grid(row=5, pady=2)
 
-threshold_textbox1 = valueTextbox(tab1, 'Threshold', 0.01)
+threshold_textbox1 = valueTextbox(tab1, '誤差區間（±）', 0.01)
 threshold_textbox1.grid(row=6, pady=2)
 
 # station_code_textbox1 = valueTextbox(tab1, 'Station code', 'LG09')
@@ -229,14 +230,14 @@ schemaName_select2.grid(row=3, pady=2)
 budget_path_select2 = fileSelect(tab2, '預算書', 'xml')
 budget_path_select2.grid(row=4, pady=2)
 
-station_code_textbox2 = valueTextbox(tab2, 'Station code', 'LG09')
-station_code_textbox2.grid(row=5, pady=2)
-
 output_path_select2 = fileSaveAs(tab2, '輸出路徑', 'csv')
-output_path_select2.grid(row=6, pady=2)
+output_path_select2.grid(row=5, pady=2)
 
-threshold_textbox2 = valueTextbox(tab2, 'Threshold', 0.01)
-threshold_textbox2.grid(row=7, pady=2)
+threshold_textbox2 = valueTextbox(tab2, '誤差區間（±）', 0.01)
+threshold_textbox2.grid(row=6, pady=2)
+
+station_code_textbox2 = valueTextbox(tab2, '車站編碼（例如：LG09）', 'LG09')
+station_code_textbox2.grid(row=7, pady=2)
 
 compare_button2= tk.Button(tab2, text="文件比對", command=compare2)
 compare_button2.grid(row=8, pady=10, ipadx=50)

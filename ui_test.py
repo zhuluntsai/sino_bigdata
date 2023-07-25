@@ -16,15 +16,17 @@ def compare(w2x):
     output_path = 'report3.csv'
     treeName = 'tree.xml'
     threshold = 0.05
-    station_code = 'LG09'
-    input_list = [(0, ), (0, ), (1, ), ()]
+    station_code = 'LG10'
+    input_list = [(0, ), (0, ), (1, )]
 
-    # wordName = 'LG10測試檔/01-設計計算書/03-2.LG10站地下擋土壁及支撐系統_取代.docx'
-    # # drawing_schema = 'LG10測試檔/02-設計圖說/LG10_drawing_result.xml'
-    # drawing_schema = 'word-preprocess/data/LG10_drawing_schema.xml'
-    # excelName = 'LG10測試檔/(已修改支撐TYPE)0080B-CQ881標LG10站地工數量-1100406.xls'
-    # excelName = 'LG10測試檔/(已修改支撐TYPE、調整中間樁TYPE)0080B-CQ881標LG10站地工數量-1100406.xls'
-    # input_list = [(0, )]
+    wordName = 'LG10測試檔/01-設計計算書/03-2.LG10站地下擋土壁及支撐系統_取代.docx'
+    # wordName = '請選擇'
+    excelName = 'LG10測試檔/(已修改支撐TYPE、調整中間樁TYPE)0080B-CQ881標LG10站地工數量-1100406.xls'
+    # excelName = '請選擇'
+    drawing_schema = 'word-preprocess/data/LG10_drawing_schema.xml'
+    # drawing_schema = '請選擇'
+    # budget_path = '請選擇'
+    input_list = [(0, 3, 4, ), (1, )]
 
     if w2x.is_pass != -1:
         group_array = [[] for _ in range(len(w2x.middle_type_list))]
@@ -32,6 +34,7 @@ def compare(w2x):
             for s in select:
                 group_array[s].append(w2x.amount_type_list[i])
             
+        group_array = [ g for g in group_array if len(g) != 0 ]
         w2x.group_array = group_array
 
     # os.system(f'python word2xml.py --word_path {wordName} --excel_path {excelName} --schema_path {schemaName} --budget_path {budget_path} --output_path {output_path} --tree_path {treeName}')

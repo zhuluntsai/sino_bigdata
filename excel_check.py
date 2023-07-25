@@ -54,7 +54,12 @@ def read_excel(self, excelName, quantityFile, regulationFile, num_workItemType_d
         sheet = excel.sheet_by_name(sheetName)
         for row in range(8, sheet.nrows):
             if str(sheet.cell_value(row, 1)).find(keyword)!=-1:
-                type_list.append(sheet.cell_value(row, 1))
+                t = sheet.cell_value(row, 1).replace(' (空打)', '')
+
+                # add spcae between type and type name
+                if 'e ' not in t:
+                    t = t.replace('e', 'e ')
+                type_list.append(t)
                 count += 1 
         return count, type_list
     
@@ -80,7 +85,7 @@ def read_excel(self, excelName, quantityFile, regulationFile, num_workItemType_d
     for i in range(num_workItemType_quantity):
         element = quantityFile[i]
         element.set('TYPE', list_workItemType_quantity[i])
-
+            
     #混凝土強度
     for i in range(len(list_workItemType_quantity_nested)):
         start_row = 8
@@ -161,7 +166,7 @@ def read_excel(self, excelName, quantityFile, regulationFile, num_workItemType_d
                         #print(sheet.cell_value(row, col))
                         tar_row = row
                         row_first = False
-                    if str(sheet.cell_value(row, col)).find("數量")!=-1:
+                    if str(sheet.cell_value(row, col)).find("數量")!=-1 and str(sheet.cell_value(row, col)).find("計價數量")!=0:
                         #print(sheet.cell_value(i, j))
                         tar_col = col
             value.text = str(sheet.cell_value(tar_row, tar_col))
@@ -618,7 +623,7 @@ def read_excel(self, excelName, quantityFile, regulationFile, num_workItemType_d
     #                 unitWeight.append(sheet.cell_value(i,6))
     #                 length.append(sheet.cell_value(i,7))
                 else:
-                    break;
+                    break
             if type_value != type_last:
                 writeSupFenQuantity(quantityFile.find(f"./*[@TYPE='{type_value}']").find('SupportGroup'),total,no,num,Type,unitWeight,length)
                 type_last = type_value
@@ -662,7 +667,7 @@ def read_excel(self, excelName, quantityFile, regulationFile, num_workItemType_d
     #                 unitWeight.append(sheet.cell_value(i,6))
     #                 length.append(sheet.cell_value(i,7))
                 else:
-                    break;
+                    break
             if type_value != type_last:
                 writeSupFenQuantity(quantityFile.find(f"./*[@TYPE='{type_value}']").find('FenceGroup'),total,no,num,Type,unitWeight,length)
                 type_last = type_value

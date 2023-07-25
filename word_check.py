@@ -33,7 +33,7 @@ def clean_string(s):
 def clear_type(type_list):
     new_type_list = []
     for t in type_list:
-        t = t.split('-')[0].replace('TYPE', 'Type')
+        t = t.split('-')[0].replace('TYPE', 'Type').replace('A', '')
         if t not in new_type_list:
             new_type_list.append(t)
 
