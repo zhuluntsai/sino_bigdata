@@ -17,11 +17,8 @@ import itertools
 from budget_check import find_budget
 
 prefix = '{http://pcstd.pcc.gov.tw/2003/eTender}'
-concrete_type_dict = {
-    'TYPE I': ['雙牆', '中間樁(柱)', '第1型水泥'],
-    'TYPE II': ['單牆', '複合牆', '永久性', '抗浮樁', '第2型水泥']}
 
-def get_unit(self, quantityFile, drawing_schema, budget_path, type_list):
+def get_unit(quantityFile, drawing_schema, budget_path, type_list, thickness_list, compare_dict):
     path = 'Concrete/Total'
     t = type_list[0]
 
@@ -31,13 +28,13 @@ def get_unit(self, quantityFile, drawing_schema, budget_path, type_list):
     quantity = quantityFile.find(f"./*[@TYPE='{t}']").find(path + '/Value').attrib['unit']
 
     budget_root = ET.parse(budget_path).getroot()
-    value = [v.replace('TYPE S0', t).replace('Type', 'TYPE').replace('000cm', f'{self.thickness_list[0]}cm') if 'TYPE' in v else v for v in self.compare_dict[path] ]
+    value = [v.replace('TYPE S0', t).replace('Type', 'TYPE').replace('000cm', f'{thickness_list[0]}cm') if 'TYPE' in v else v for v in compare_dict[path] ]
     xpath = f"{prefix+value[0]}/{prefix}PayItem/{prefix}PayItem/[{prefix}Description='{value[1]}']/{prefix}Unit"
     budget = budget_root.find(xpath).text
 
     return drawing, quantity, budget
     
-def concrete_type_classification(concrete):
+def concrete_type_classification(concrete_type_dict, concrete):
     for key in concrete_type_dict:
         for keyword in concrete_type_dict[key]:
             if keyword in concrete:
@@ -65,7 +62,7 @@ def check_regulation(self):
 
         key = '計量方式連續壁'
         description = '第02266章\n連續壁\n頁碼：02266-16'
-        drawing, quantity, budget = get_unit(self, self.quantityFile, self.drawing_schema, self.budget_path, self.type_list)
+        drawing, quantity, budget = get_unit(self.quantityFile, self.drawing_schema, self.budget_path, self.type_list, self.thickness_list, self.compare_dict)
         unit_compare_result = self.value_compare('', [drawing, quantity, budget])
         row = [key, '', description, '', quantity, drawing, budget, unit_compare_result]
         writer.writerow(row)
@@ -96,12 +93,11 @@ def check_regulation(self):
         description = '第03010章\n卜特蘭水泥混凝土\n頁碼：03010-9'
         budget_type_list = get_budget_list(self.compare_dict, self.budget_path, self.type_list, self.thickness_list, path)
         for concrete, quantity_type, budget_type, t in zip(self.concrete_list, self.concrete_type_list, budget_type_list, self.type_list):
-            concrete_type = concrete_type_classification(concrete)
-            budget_type = concrete_type_classification(budget_type)
+            concrete_type = concrete_type_classification(self.concrete_type_dict, concrete)
+            budget_type = concrete_type_classification(self.concrete_type_dict, budget_type)
             concrete_type_compare_result = self.value_compare('', [concrete_type, quantity_type, budget_type])
             row = [key, f'{t}', description, concrete, concrete_type, quantity_type, budget_type, concrete_type_compare_result]
             writer.writerow(row)
-
 
 if __name__ == '__main__':
     check_regulation()

@@ -68,6 +68,9 @@ class Word2Xml():
             # '末端版重': 'EndPanel/Total',
             # '導溝行徑米': 'GuideWall/Total',
         }
+        self.concrete_type_dict = {
+            'TYPE I': ['雙牆', '中間樁(柱)', '第1型水泥'],
+            'TYPE II': ['單牆', '複合牆', '永久性', '抗浮樁', '第2型水泥']}
         self.rebar_dict = {
             '垂直筋（擋土）': 'RebarGroup/VertRebar/Retaining',
             '垂直筋（開挖）': 'RebarGroup/VertRebar/Excavation',
@@ -104,6 +107,37 @@ class Word2Xml():
 
         return strength_dict
 
+    def get_drawing(self, drawing_shema_path, t):
+        def find_drawing(root, drawing, t, drawing_path):
+            try:
+                return root.find(f"File/[@Description='設計圖說']/Drawing[@Description='{drawing}']/WorkItemType[@Description='{t}']/{drawing_path}/Value").text
+            except:
+                return ''
+        
+        drawing_schema_root = ET.parse(self.drawing_schema).getroot()
+        drawing_value = []
+
+        for drawing in ['立面圖', '配筋圖', '平面圖']:
+            value = find_drawing(drawing_schema_root, drawing, t, drawing_shema_path)
+            drawing_value.append(value)
+
+        return drawing_value
+
+    def get_type_drawing(self, drawing_schema):
+        print('抓取設計圖說')
+        drawing_schema_root = ET.parse(drawing_schema).getroot()
+        type_list = []
+        count_blank = 0
+
+        drawing = '配筋圖'
+        for t in drawing_schema_root.find(f"File/[@Description='設計圖說']/Drawing[@Description='{drawing}']"):
+            type_list.append(t.attrib['Description'])
+            if "空打" in t.attrib['Description']:
+                count_blank += 1
+
+        print('設計圖說抓取完成')
+        return len(type_list), count_blank, type_list
+
     def value_compare(self, key, value):
         # flatten
         new_value = []
@@ -139,37 +173,6 @@ class Word2Xml():
         except:
             value = [v.casefold() for v in value if v != '' and v != None]
             return len(set(value)) == 1
-
-    def get_drawing(self, drawing_shema_path, t):
-            def find_drawing(root, drawing, t, drawing_path):
-                try:
-                    return root.find(f"File/[@Description='設計圖說']/Drawing[@Description='{drawing}']/WorkItemType[@Description='{t}']/{drawing_path}/Value").text
-                except:
-                    return ''
-            
-            drawing_schema_root = ET.parse(self.drawing_schema).getroot()
-            drawing_value = []
-
-            for drawing in ['立面圖', '配筋圖', '平面圖']:
-                value = find_drawing(drawing_schema_root, drawing, t, drawing_shema_path)
-                drawing_value.append(value)
-
-            return drawing_value
-
-    def find_type_drawing(self, drawing_schema):
-        print('抓取設計圖說')
-        drawing_schema_root = ET.parse(drawing_schema).getroot()
-        type_list = []
-        count_blank = 0
-
-        drawing = '配筋圖'
-        for t in drawing_schema_root.find(f"File/[@Description='設計圖說']/Drawing[@Description='{drawing}']"):
-            type_list.append(t.attrib['Description'])
-            if "空打" in t.attrib['Description']:
-                count_blank += 1
-
-        print('設計圖說抓取完成')
-        return len(type_list), count_blank, type_list
 
     def get_value(self, key_dict, key, t):
         try:
@@ -218,7 +221,7 @@ class Word2Xml():
         budget_type_list = []
         num_workItemType_design = 0
         
-        #複製 schema 為 tree
+        # copy schema as tree
         shutil.copy(schemaName, treeName)
         tree = ET.parse(treeName)
         root = tree.getroot()
@@ -229,19 +232,22 @@ class Word2Xml():
         root[4].set('Description', '預算書')
         self.budgetFile = root[4]
 
+        # read excel
         if '請選擇' not in excelName:
             self.concrete_list, self.concrete_type_list, excel_type_list = read_excel(self, excelName, self.quantityFile, self.regulationFile, num_workItemType_design)
             tree.write(treeName)
 
+        # read drawing
         if '請選擇' not in drawing_schema:
             strength_dict = self.get_strength(drawing_schema)
             self.concrete_strength, self.rebar_strength = strength_dict['Concrete'], strength_dict['Rebar']
             try:
-                _, _, drawing_type_list = self.find_type_drawing(drawing_schema)
+                _, _, drawing_type_list = self.get_type_drawing(drawing_schema)
             except:
                 print('無法從設計圖說schema抓取type資訊')
                 return
 
+        # read budget
         if '請選擇' not in budget_path:
             budget_type_list, self.thickness_list, self.compare_dict = read_budget(self.budgetFile, budget_path, station_code)
             tree.write(treeName)
@@ -251,19 +257,27 @@ class Word2Xml():
                          '設計圖說': drawing_type_list,
                          '預算書': budget_type_list,
                          }
+        
+        # find longest type list as the main type list
         for t in all_type_dict:
             print(t, all_type_dict[t])
             if len(all_type_dict[t]) > length:
                 length = len(all_type_dict[t])
                 self.type_list = all_type_dict[t]
         
+        # read word
         if '請選擇' not in wordName:
             word_type_list, num_workItemType_design = read_word(wordName, self.designFile, self.type_list)
             tree.write(treeName)
+    
         self.type_list = [t.replace('TYPE', 'Type') for t in self.type_list]
+
+        # output csv
         with open(output_path, 'w', encoding='BIG5', newline='') as f:
             writer = csv.writer(f)
             writer.writerow(["項目", 'TYPE', "設計計算書數值", "數量計算書數值", "立面圖", "配筋圖", "平面圖", "預算書數值", "是否一致", "備註"])
+            
+            # main key dict
             for key in self.key_dict:
 
                 for t in self.type_list:
@@ -289,7 +303,8 @@ class Word2Xml():
 
                     if compare_result != 'NA' and compare_result != '':
                         writer.writerow(row)   
-                     
+
+            # support, fence   
             if '請選擇' not in wordName and '請選擇' not in excelName:
                 # print(self.quantityFile[1].find('SupportGroup')[0].tag)
                 # print(self.quantityFile[1].find('SupportGroup')[0].find('Type/Value').text)
@@ -336,6 +351,7 @@ class Word2Xml():
                             # print(i, j)
                             pass
                 
+            # rebar
             if '請選擇' not in wordName and '請選擇' not in drawing_schema:
                 for key in self.rebar_dict:
                     for t in word_type_list:
@@ -384,6 +400,7 @@ class Word2Xml():
                             # print(e)
                             pass
         
+        # regulation check
         if '請選擇' not in excelName and '請選擇' not in drawing_schema and '請選擇' not in budget_path:
             try:
                 check_regulation(self)
