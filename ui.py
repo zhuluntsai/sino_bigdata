@@ -1,14 +1,17 @@
 import tkinter as tk
 import tkinter.ttk as ttk
 
-from tkinter import filedialog
-import os
+from tkinter import filedialog, Menu
 from word2xml import Word2Xml
 from tkinter.messagebox import showinfo
+from tkPDFViewer import tkPDFViewer as pdf
+import subprocess 
 
 root = tk.Tk()
+menu= Menu(root)
 root.title('文件比對程式')
 root.geometry('+300+300')
+root.config(menu=menu)
 root.grid_columnconfigure(0, weight=1)
 
 tab_parent = ttk.Notebook(root)
@@ -17,8 +20,24 @@ tab2 = ttk.Frame(tab_parent)
 
 tab_parent.add(tab1, text="設計階段")
 tab_parent.add(tab2, text="完整功能")
-
 tab_parent.pack(expand=1, fill="both")
+
+def quit():
+    root.destroy()
+
+def open_document():
+    file_name = '../SinoTech使用手冊.pdf'
+
+    # pdf_file = tk.Toplevel(tk.Frame(root)) 
+    # v1 = pdf.ShowPdf()
+    # v1.pdf_view(pdf_file, pdf_location=file_name, width=80, height=100).pack()
+    
+    subprocess.run(['open', file_name], check=True)
+
+sub_menu=Menu(menu, tearoff=False)
+menu.add_cascade(label="檔案", menu=sub_menu)
+sub_menu.add_command(label="使用手冊",command=open_document)
+sub_menu.add_command(label="結束",command=quit)
 
 # https://stackoverflow.com/questions/73658643/bind-button-open-file-dialog-to-a-text-field-in-tkinter
 class fileSelect(tk.Frame):
@@ -108,25 +127,25 @@ def compare1():
     global type_multiple_select
 
     wordName = wordName_select1.file_path
-    excelName = excelName_select2.file_path
     drawing_schema = drawing_schema_select1.file_path
     schemaName = schemaName_select1.file_path
-    budget_path = budget_path_select2.file_path
     output_path = output_path_select1.file_path
     threshold = float(threshold_textbox1.value)
-    station_code = ''
-    treeName = 'tree.xml'
+
+    if '請選擇' in schemaName:
+        showinfo("注意", f'請選擇 schema 檔案') 
+        return
+    if '請輸入' in output_path:
+        showinfo("注意", f'請輸入輸出路徑') 
+        return
 
     word2Xml1.export_report(
         wordName=wordName, 
-        excelName=excelName,
         schemaName=schemaName,
         drawing_schema=drawing_schema,
-        budget_path=budget_path,
         output_path=output_path,
-        treeName=treeName,
         threshold=threshold,
-        station_code=station_code,)
+        )
 
     print(f'比對報告已儲存在 {output_path}')  
     showinfo("注意", f'比對報告已儲存在 {output_path}')  
@@ -142,17 +161,13 @@ def compare2():
     output_path = output_path_select2.file_path
     threshold = float(threshold_textbox2.value)
     station_code = station_code_textbox2.value
-    treeName = 'tree.xml'
 
-    # prefix = '/home/user/Documents/weilun/sinotech/'
-    # wordName = 'word-preprocess/data/LG09站地下擋土壁及支撐系統20221212圍囹正確版_修改換行符.docx'
-    # excelName = 'word-preprocess/data/CQ881標LG09站地工數量-1111230更新.xls'
-    # drawing_schema = 'word-preprocess/data/drawing_schema.xml'
-    # schemaName = 'word-preprocess/data/schema.xml'
-    # budget_path = 'word-preprocess/data/CQ881標土建工程CQ881-11-04_bp_rbid.xml'
-    # output_path = 'report.csv'
-    # treeName = 'tree.xml'
-    
+    if '請選擇' in schemaName:
+        showinfo("注意", f'請選擇 schema 檔案') 
+        return
+    if '請輸入' in output_path:
+        showinfo("注意", f'請輸入輸出路徑') 
+        return
 
     if word2Xml2.is_pass != -1:
         group_array = [[] for _ in range(len(word2Xml2.middle_type_list))]
@@ -172,9 +187,9 @@ def compare2():
         drawing_schema=drawing_schema,
         budget_path=budget_path,
         output_path=output_path,
-        treeName=treeName,
         threshold=threshold,
-        station_code=station_code,)
+        station_code=station_code,
+        )
 
     if word2Xml2.is_pass:
         print(f'比對報告已儲存在 {output_path}') 
@@ -191,28 +206,23 @@ def compare2():
 
         word2Xml2.is_pass = True    
 
-
 wordName_select1 = fileSelect(tab1, '設計計算書', 'docx')
 wordName_select1.grid(row=0, pady=5)
 
 drawing_schema_select1 = fileSelect(tab1, '設計圖說', 'xml')
-drawing_schema_select1.grid(row=2, pady=2)   
+drawing_schema_select1.grid(row=1, pady=2)   
 
 schemaName_select1 = fileSelect(tab1, 'Schema', 'xml')
-schemaName_select1.grid(row=3, pady=2)
+schemaName_select1.grid(row=2, pady=2)
 
 output_path_select1 = fileSaveAs(tab1, '輸出路徑', 'csv')
-output_path_select1.grid(row=5, pady=2)
+output_path_select1.grid(row=3, pady=2)
 
 threshold_textbox1 = valueTextbox(tab1, '誤差區間（±）', 0.01)
-threshold_textbox1.grid(row=6, pady=2)
-
-# station_code_textbox1 = valueTextbox(tab1, 'Station code', 'LG09')
-# station_code_textbox1.grid(row=7, pady=2)
+threshold_textbox1.grid(row=4, pady=2)
 
 compare_button1 = tk.Button(tab1, text="文件比對", command=compare1)
-compare_button1.grid(row=8, pady=10, ipadx=50)
-
+compare_button1.grid(row=5, pady=10, ipadx=50)
 
 
 wordName_select2 = fileSelect(tab2, '設計計算書', 'docx')
@@ -242,16 +252,7 @@ station_code_textbox2.grid(row=7, pady=2)
 compare_button2= tk.Button(tab2, text="文件比對", command=compare2)
 compare_button2.grid(row=8, pady=10, ipadx=50)
 
-box_list = []
 word2Xml1 = Word2Xml()
 word2Xml2 = Word2Xml()
 
 root.mainloop()
-
-# amount_type_list = ['TYPE S1','TYPE S2','TYPE S3']
-# middle_type_list = ['TYPE S1','TYPE S3']
-# [[0, 1], [2]]
-
-# amount_type_list = ['TYPE T1','TYPE T1A','TYPE T2']
-# middle_type_list = ['中間柱1左','中間柱1中','中間柱1右','中間柱2', '中間柱3']
-# [[0], [0], [0], [2]]

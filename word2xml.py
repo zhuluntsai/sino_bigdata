@@ -148,30 +148,23 @@ class Word2Xml():
             else:
                 new_value.append(v)
 
-        value = new_value
+        # if less than 2 value, don't comparing
+        value = [ v for v in new_value if v != '' and v != None]
+        if len(value) <= 1:
+            return ''
+
         if key == 'Concrete/Strength' and value[0] != '' and value[0] != None:
             value[0] = str(int(value[0]) + 35)
 
         # float
-        try:
-            # if less than 2 value, don't comparing
-            count = [1 for v in value if v != '' and v != None]
-            if sum(count) == 1:
-                return ''
-            elif sum(count) == 0:
-                return 'NA'
-            
-            value = [float(v) for v in value if v != '' and v != None]
-            delta = np.diff(np.sort(value))
-
-            threshold_value = [v * self.threshold for v in value]
-            # print(value, threshold_value, delta)
-            
-            return all([ d <= threshold_value[i] for i, d in enumerate(delta) ])
+        try:            
+            benchmark = float(value[0])
+            threshold_value = benchmark * self.threshold
+            return all([ abs(float(v) - benchmark) <= threshold_value for v in value ])
 
         # string
         except:
-            value = [v.casefold() for v in value if v != '' and v != None]
+            value = [ v.casefold() for v in value ]
             return len(set(value)) == 1
 
     def get_value(self, key_dict, key, t):
@@ -196,7 +189,7 @@ class Word2Xml():
         try:
             drawing = self.get_drawing(schema_path, t.replace('Type', 'TYPE'))
         except:
-            drawing = ''
+            drawing = ['', '', '']
         
         try:
             budget = self.budgetFile.find(f"./*[@TYPE='{t.replace('Type', 'TYPE')}']").find(schema_path + '/Value').text 
@@ -205,7 +198,7 @@ class Word2Xml():
         
         return design, quantity, drawing, budget
 
-    def export_report(self, wordName, excelName, schemaName, drawing_schema, treeName, budget_path, output_path, threshold, station_code):
+    def export_report(self, wordName='', excelName='', schemaName='', drawing_schema='', treeName='tree.xml', budget_path='', output_path='', threshold=0.05, station_code=''):
         self.wordName = wordName
         self.excelName = excelName
         self.schemaName = schemaName
@@ -282,7 +275,7 @@ class Word2Xml():
 
                 for t in self.type_list:
                     design, quantity, drawing, budget = self.get_value(self.key_dict, key, t)
-                    compare_result = self.value_compare(self.key_dict[key], [design, quantity, drawing, budget])
+                    compare_result = self.value_compare(self.key_dict[key], [design, drawing, quantity, budget])
 
                     row = [key, f'{t}', design, quantity, drawing, budget, compare_result]
 
@@ -301,7 +294,7 @@ class Word2Xml():
                             new_row.append(v)
                     row = new_row
 
-                    if compare_result != 'NA' and compare_result != '':
+                    if compare_result != '':
                         writer.writerow(row)   
 
             # support, fence   
@@ -394,7 +387,7 @@ class Word2Xml():
                                             new_row.append(v)
                                     row = new_row
 
-                                    if compare_result != 'NA':
+                                    if compare_result != '':
                                         writer.writerow(row)
                         except Exception as e:
                             # print(e)
