@@ -4,7 +4,7 @@ import tkinter.ttk as ttk
 from tkinter import filedialog, Menu
 from word2xml import Word2Xml
 from tkinter.messagebox import showinfo
-from tkPDFViewer import tkPDFViewer as pdf
+# from tkPDFViewer import tkPDFViewer as pdf
 import subprocess 
 
 root = tk.Tk()
@@ -26,7 +26,7 @@ def quit():
     root.destroy()
 
 def open_document():
-    file_name = '../SinoTech使用手冊.pdf'
+    file_name = 'SinoTech使用手冊.pdf'
 
     # pdf_file = tk.Toplevel(tk.Frame(root)) 
     # v1 = pdf.ShowPdf()

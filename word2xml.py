@@ -263,6 +263,7 @@ class Word2Xml():
             word_type_list, num_workItemType_design = read_word(wordName, self.designFile, self.type_list)
             tree.write(treeName)
     
+        print('設計計算書', word_type_list)
         self.type_list = [t.replace('TYPE', 'Type') for t in self.type_list]
 
         # output csv
@@ -294,8 +295,8 @@ class Word2Xml():
                             new_row.append(v)
                     row = new_row
 
-                    if compare_result != '':
-                        writer.writerow(row)   
+                    # if compare_result != '':
+                    writer.writerow(row)   
 
             # support, fence   
             if '請選擇' not in wordName and '請選擇' not in excelName:
@@ -353,25 +354,25 @@ class Word2Xml():
                             design_rebar_length = len(design_rebar)
                             drawing_rebar = ET.parse(self.drawing_schema).getroot().find(f"File/[@Description='設計圖說']/Drawing[@Description='配筋圖']/WorkItemType[@Description='{t.replace('Type', 'TYPE')}']/{self.rebar_dict[key].replace('RebarGroup/', '')}")
                             drawing_rebar_length = len(drawing_rebar)
-                            for i in range(min(design_rebar_length, drawing_rebar_length)):
+                            for i in range(max(design_rebar_length, drawing_rebar_length)):
                                 for item_key in self.rebar_item_dict:
                                     item = self.rebar_item_dict[item_key]
                                     schema_path = f'{self.rebar_dict[key]}/Rebar/{item}'
                                     
                                     try:
-                                        design = self.designFile.find(f"./*[@TYPE='{t}']").find(schema_path + '/Value').text
+                                        design = design_rebar[i].find(f'{item}/Value').text
                                         if item_key == '設計':
                                             design = design.replace(' ', '') + '0'
                                     except:
                                         design = ''
 
                                     try:
-                                        if 'DepthStart' in schema_path:
-                                            schema_path = schema_path.replace('DepthStart', 'StartDepth')
-                                        elif 'DepthEnd' in schema_path:
-                                            schema_path = schema_path.replace('DepthEnd', 'EndDepth')
+                                        if 'DepthStart' in item:
+                                            item = 'StartDepth'
+                                        elif 'DepthEnd' in item:
+                                            item = 'EndDepth'
                                         
-                                        drawing = self.get_drawing(schema_path.replace('RebarGroup/', ''), t.replace('Type', 'TYPE'))
+                                        drawing = drawing_rebar[i].find(f'{item}/Value').text
                                     except:
                                         drawing = ''
 
@@ -387,8 +388,8 @@ class Word2Xml():
                                             new_row.append(v)
                                     row = new_row
 
-                                    if compare_result != '':
-                                        writer.writerow(row)
+                                    # if compare_result != '':
+                                    writer.writerow(row)
                         except Exception as e:
                             # print(e)
                             pass

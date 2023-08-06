@@ -30,14 +30,16 @@ def clean_string(s):
     
     return s
 
-def clear_type(type_list):
+def clear_type(count_blank, type_list):
     new_type_list = []
     for t in type_list:
-        t = t.split('-')[0].replace('TYPE', 'Type').replace('A', '')
-        if t not in new_type_list:
+        t = t.split('-')[0].replace('TYPE', 'Type')
+        if not any(n in t for n in new_type_list):
             new_type_list.append(t)
-
-    return len(new_type_list), new_type_list
+        else:
+            count_blank += 1
+   
+    return len(new_type_list), count_blank, new_type_list
 
 def read_word(wordName, designFile, type_list):
     print('抓取設計計算書')
@@ -47,7 +49,7 @@ def read_word(wordName, designFile, type_list):
     count_blank = 0
     sheet_list = []
 
-    count, sheet_list = clear_type(type_list)
+    count, count_blank, sheet_list = clear_type(count_blank, type_list)
     num_workItemType_design = count
 
     for i in range(num_workItemType_design - 1):
