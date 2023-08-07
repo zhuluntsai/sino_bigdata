@@ -5,7 +5,9 @@ from tkinter import filedialog, Menu
 from word2xml import Word2Xml
 from tkinter.messagebox import showinfo
 # from tkPDFViewer import tkPDFViewer as pdf
-import subprocess 
+import subprocess
+import os 
+import platform
 
 root = tk.Tk()
 menu= Menu(root)
@@ -31,11 +33,16 @@ def open_document():
     # pdf_file = tk.Toplevel(tk.Frame(root)) 
     # v1 = pdf.ShowPdf()
     # v1.pdf_view(pdf_file, pdf_location=file_name, width=80, height=100).pack()
-    
-    subprocess.run(['open', file_name], check=True)
+
+    if platform.system() == 'Darwin':
+        subprocess.run(['open', file_name], check=True)
+    elif platform.system() == 'Windows': 
+        os.startfile(file_name)
+    else:
+        subprocess.call(('xdg-open', file_name))
 
 sub_menu=Menu(menu, tearoff=False)
-menu.add_cascade(label="檔案", menu=sub_menu)
+menu.add_cascade(label="使用手冊", menu=sub_menu)
 sub_menu.add_command(label="使用手冊",command=open_document)
 sub_menu.add_command(label="結束",command=quit)
 
