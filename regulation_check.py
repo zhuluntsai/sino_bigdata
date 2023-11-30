@@ -87,7 +87,7 @@ def check_regulation(self):
             row = [key, f'{t}', description, '', quantity, drawing, budget, strength_compare_result]
             writer.writerow(row)
         
-        writer.writerow(['項目', 'TYPE', '規範', "數量計算書混凝土", "數量計算書混凝土型式", "數量計算書混凝土TYPE", '預算書混凝土TYPE', "是否一致", "備註"])
+        writer.writerow(['項目', 'TYPE', '規範', "數量計算書工程分項", "工程分項對應之混凝土型式", "數量計算書之混凝土型式", '預算書混凝土型式', "是否一致", "備註"])
         key = '混凝土型式'
         path = 'Concrete/Strength'
         description = '第03010章\n卜特蘭水泥混凝土\n頁碼：03010-9'

@@ -226,7 +226,7 @@ class Word2Xml():
         self.budgetFile = root[4]
 
         # read excel
-        if '請選擇' not in excelName:
+        if '請選擇' not in excelName and excelName != '':
             self.concrete_list, self.concrete_type_list, excel_type_list = read_excel(self, excelName, self.quantityFile, self.regulationFile, num_workItemType_design)
             tree.write(treeName)
 
@@ -241,7 +241,7 @@ class Word2Xml():
                 return
 
         # read budget
-        if '請選擇' not in budget_path:
+        if '請選擇' not in budget_path and excelName != '':
             budget_type_list, self.thickness_list, self.compare_dict = read_budget(self.budgetFile, budget_path, station_code)
             tree.write(treeName)
 
@@ -378,7 +378,7 @@ class Word2Xml():
 
                                     compare_result = self.value_compare(self.rebar_dict[key], [design, drawing]) 
                                     
-                                    row = [key + item_key, f'{t}', design, '', drawing, '', compare_result]     
+                                    row = [key + item_key, f'{t}', design, '', '', drawing, '', '', compare_result]     
                                     new_row = []
                                     for v in row:
                                         if isinstance(v, list):
