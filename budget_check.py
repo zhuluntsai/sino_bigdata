@@ -86,8 +86,10 @@ def find_budget_in(target, root):
 def find_value(value, front, back):
     return value.split(front)[-1].split(back)[0].strip()
 
-def compare_budget(key, value, budget_root, keyword_list, t=''):    
-    value = [v.replace(v, t) if any(k in v for k in keyword_list) else v for v in value ] 
+def compare_budget(key, value, budget_root, keyword_list, t='', tt=''):    
+    value = [ v.replace(v, t) if any(k in v for k in keyword_list) else v for v in value ] 
+    if '開挖支撐及保護' in tt:
+        value = [ v.replace(v, tt) if '開挖支撐及保護' in v else v for v in value ] 
     budget_value = find_budget(value, budget_root)
 
     if key == 'Concrete/Thickness':
@@ -120,6 +122,11 @@ def read_budget(budgetFile, budget_path, station_code):
     # delete duplicate
     type_list = list(dict.fromkeys(type_list))
 
+    # Y37 no keyword
+    if type_list == []:
+        type_list = find_budget(['#', 'DetailList', f'{station_code}', '開挖支撐及保護', ''], budget_root)
+    type_list.sort(key=lambda t: t.upper().split('TYPE')[1])
+    
     for i in range(len(type_list)-1):
         budgetFile.append(deepcopy(budgetFile[0]))
         budgetFile[i].set('TYPE', type_list[i])
@@ -127,6 +134,8 @@ def read_budget(budgetFile, budget_path, station_code):
 
     # prepare middle coloumn schema
     middle_column_list = find_budget(['#', 'CostBreakdownList', station, '全套管式鑽掘混凝土基樁', ''], budget_root)
+    if any('開挖支撐及保護' in t for t in type_list):
+        middle_column_list = [ find_budget(['#', 'CostBreakdownList', t, '全套管式鑽掘混凝土基樁', ''], budget_root)[0] for t in type_list ]  
     middleColumnGroup = budgetFile.find(f"./*[@TYPE='{type_list[0]}']").find('MiddleColumnGroup')
     for i in range(len(middle_column_list)-1):
         middleColumnGroup.insert(0, deepcopy(middleColumnGroup[0]))
@@ -174,7 +183,7 @@ def read_budget(budgetFile, budget_path, station_code):
         'Length': ['', 'CostBreakdownList', station, '全套管式鑽掘混凝土基樁', '施作深度', '公尺'],     
     }
     
-    keyword_list = ['連續壁', '排樁', '鋼板樁']
+    keyword_list = ['連續壁', '排樁', '鋼板樁', '開挖支撐及保護']
     for t in type_list:
         for key in list(compare_dict.keys()):
             try:
@@ -185,11 +194,11 @@ def read_budget(budgetFile, budget_path, station_code):
                 # print('error', t, key)
 
     keyword_list = ['連續壁', '排樁', '鋼板樁', '基樁']
-    for m, t in zip(middleColumnGroup, middle_column_list):
+    for i in range(len(middleColumnGroup)):
         for key in list(middle_column_compare_dict.keys()):
             try:
-                budget_value = compare_budget(key, middle_column_compare_dict[key], budget_root, keyword_list, t)
-                m.find(key + '/Value').text = str(budget_value)
+                budget_value = compare_budget(key, middle_column_compare_dict[key], budget_root, keyword_list, middle_column_list[i], type_list[i])
+                middleColumnGroup[i].find(key + '/Value').text = str(budget_value)
             except:
                 pass
                 # print(t, key)
