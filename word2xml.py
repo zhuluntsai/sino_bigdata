@@ -17,6 +17,12 @@ import itertools
 from budget_check import read_budget
 from excel_check import read_excel
 from word_check import read_word
+from excel_check_sheet_pile import read_excel
+from word_check_sheet_pile import read_word
+from excel_check_row_pile import read_excel
+from word_check_row_pile import read_word
+from excel_check_middle_column import read_excel
+from word_check_middle_column import read_word
 from regulation_check import check_regulation
 
 prefix = '{http://pcstd.pcc.gov.tw/2003/eTender}'
@@ -32,6 +38,10 @@ class Word2Xml():
         self.concrete_strength = []
         self.rebar_strength = []
 
+        self.word_type_list = []
+        self.excel_type_list = []
+        self.budget_type_list = []
+
         self.wordName = ''
         self.excelName = ''
         self.schemaName = ''
@@ -41,32 +51,56 @@ class Word2Xml():
         self.output_path = ''
 
         self.key_dict = {
-            '混凝土強度': 'Concrete/Strength',
-            '混凝土深度': 'Concrete/Depth',
-            '混凝土厚度': 'Concrete/Thickness',
-            '混凝土面積': 'Concrete/Total',
-            '混凝土長度': 'Concrete/Length',
+            '混凝土強度': 'DiaphragmWall/Concrete/Strength',
+            '混凝土體積': 'DiaphragmWall/Concrete/Total',
+            '混凝土深度': 'DiaphragmWall/Depth',
+            '混凝土厚度': 'DiaphragmWall/Thickness',
+            '混凝土長度': 'DiaphragmWall/Length',
+            '混凝土鋼筋重': 'DiaphragmWall/RebarWeight',
+            # '混凝土面積': 'DiaphragmWall/Total',
+            # '導溝體積': 'DiaphragmWall/GuideWall/Total',
+            # '末端版體積': 'DiaphragmWall/U_Board/Total',
             
-            '中間柱型鋼尺寸': 'MiddleColumn/Steel/Type',
-            '中間柱型鋼長度': 'MiddleColumn/Steel/Length',
-            '中間柱支數': 'MiddleColumn/DrilledPile/Count',
-            '開挖面以上': 'MiddleColumn/Steel/TotalUpper',
-            '埋入鑽掘樁': 'MiddleColumn/Steel/TotalLower',
-
-            '鑽掘樁直徑': 'MiddleColumn/DrilledPile/Diameter',
-            '鑽掘樁施作深度': 'MiddleColumn/Length',
-            '開挖深度': 'MiddleColumn/Depth',
-            '鑽掘樁實作深度（樁身埋入深度）': 'MiddleColumn/DrilledPile/Length',
-
-            '鑽掘樁混凝土強度': 'MiddleColumn/DrilledPile/Concrete/Strength',
-            '鑽掘樁鋼筋籠鋼筋重': 'MiddleColumn/RebarCage/Total',
-            '支撐/圍囹鋼材噸數': 'Total_SupFen',
-            
-            '鋼筋強度': 'RebarCageGroup/RebarCage/Strength',
-
+            # '鋼筋強度': 'RebarCageGroup/RebarCage/Strength',
             # '鋼筋籠鋼筋重': 'RebarCage/Rebar/Total',
-            # '末端版重': 'EndPanel/Total',
-            # '導溝行徑米': 'GuideWall/Total',
+            '鋼筋強度': 'RebarGroup/Strength',
+
+            # '鋼板樁高度': 'Sheetpile/Height',
+            # '鋼板樁型號': 'Sheetpile/Type',
+            # '鋼板樁行進米': 'Sheetpile/Total',
+
+            '排樁型式': 'Rowpile/Type',
+            '排樁高度': 'Rowpile/Height',
+            '排樁直徑': 'Rowpile/Diameter',
+            '排樁混凝土強度': 'Rowpile/Concrete/Strength',
+            '排樁混凝土體積': 'Rowpile/Concrete/Total',
+            '排樁支數': 'Rowpile/Count',
+            '排樁鋼筋籠重': 'Rowpile/RebarWeight',
+
+            '繫樑混凝土體積': 'Beam/Concrete/Total',
+            '繫樑模板面積': 'Beam/formwork',
+            '繫樑鋼筋籠重': 'Beam/RebarWeight',
+            '支撐/圍囹鋼材噸數': 'Total_SupFen',
+        }
+        self.middle_key_dict = {
+            '開挖面以上': 'Steel/TotalUpper',
+            '埋入鑽掘樁': 'Steel/TotalLower',
+
+            '鑽掘樁直徑': 'DrilledPile/Diameter',
+            '鑽掘樁實作深度（樁身埋入深度）': 'DrilledPile/Length',
+            '鑽掘樁混凝土體積': 'DrilledPile/Concrete/Total',
+            '鑽掘樁混凝土強度': 'DrilledPile/Concrete/Strength',
+            '鑽掘樁回填土體積': 'DrilledPile/Backfill/Total',
+            '中間樁支數': 'DrilledPile/Count',
+
+            '鑽掘樁鋼筋重': 'Rebar/Total',
+            '中間樁長度': 'TotalLength',
+            '鑽掘樁施作深度': 'Length',
+
+            '中間樁型鋼尺寸': 'Steel/Type',
+            '中間樁型鋼長度': 'Steel/Length',
+            '鑽掘樁鋼筋籠鋼筋重': 'RebarCage/Total',
+            '開挖深度': 'Depth',
         }
         self.concrete_type_dict = {
             'TYPE I': ['雙牆', '中間樁(柱)', '第1型水泥'],
@@ -138,7 +172,7 @@ class Word2Xml():
         print('設計圖說抓取完成')
         return len(type_list), count_blank, type_list
 
-    def value_compare(self, key, value):
+    def value_compare(self, key, value, t):
         # flatten
         new_value = []
         for v in value:
@@ -153,8 +187,16 @@ class Word2Xml():
         if len(value) <= 1:
             return ''
 
-        if key == 'Concrete/Strength' and value[0] != '' and value[0] != None:
+        if key == 'DiaphragmWall/Concrete/Strength' and value[0] != '' and value[0] != None:
             value[0] = str(int(value[0]) + 35)
+        if key == 'DiaphragmWall/Thickness' and value[0] != '' and value[0] != None:
+            value[-1] = str(float(value[-1]) / 100)
+        if key == 'Rowpile/Concrete/Total':
+            quantity = self.quantityFile.find(f"./*[@TYPE='{t}']").find('Rowpile/Count/Value').text 
+            value[0] = float(value[0]) / int(float(quantity)) * self.waste
+        if key == 'Rowpile/RebarWeight':
+            quantity = self.quantityFile.find(f"./*[@TYPE='{t}']").find('Rowpile/Count/Value').text 
+            value[0] = float(value[0]) / int(float(quantity)) * self.waste2
 
         # float
         try:            
@@ -167,19 +209,19 @@ class Word2Xml():
             value = [ v.casefold() for v in value ]
             return len(set(value)) == 1
 
-    def get_value(self, key_dict, key, t):
+    def get_value(self, key_dict, key, t, i):
         try:
             schema_path = key_dict[key]
         except:
             pass
 
         try:
-            design = self.designFile.find(f"./*[@TYPE='{t}']").find(schema_path + '/Value').text
+            design = self.designFile.find(f"./*[@TYPE='{self.word_type_list[i]}']").find(schema_path + '/Value').text
         except:
             design = ''
         
         try:
-            quantity = self.quantityFile.find(f"./*[@TYPE='{t}']").find(schema_path + '/Value').text 
+            quantity = self.quantityFile.find(f"./*[@TYPE='{self.excel_type_list[i]}']").find(schema_path + '/Value').text 
 
             if schema_path == 'MiddleColumn/Steel/Length':
                 quantity = float(quantity) + float(self.quantityFile.find(f"./*[@TYPE='{t}']").find('MiddleColumn/Depth/Value').text)
@@ -192,13 +234,13 @@ class Word2Xml():
             drawing = ['', '', '']
         
         try:
-            budget = self.budgetFile.find(f"./*[@TYPE='{t.replace('Type', 'TYPE')}']").find(schema_path + '/Value').text 
+            budget = self.budgetFile.find(f"./*[@TYPE='{self.budget_type_list[i]}']").find(schema_path + '/Value').text 
         except:
             budget = ''
         
         return design, quantity, drawing, budget
 
-    def export_report(self, wordName='', excelName='', schemaName='', drawing_schema='', treeName='tree.xml', budget_path='', output_path='', threshold=0.05, station_code=''):
+    def export_report(self, wordName='', excelName='', schemaName='', drawing_schema='', treeName='tree.xml', budget_path='', output_path='', threshold=0.05, waste=1.08, waste2=1.08, station_code=''):
         self.wordName = wordName
         self.excelName = excelName
         self.schemaName = schemaName
@@ -207,6 +249,8 @@ class Word2Xml():
         self.budget_path = budget_path
         self.output_path = output_path
         self.threshold = threshold
+        self.waste = waste
+        self.waste2 = waste2
 
         word_type_list = []
         excel_type_list = []
@@ -227,7 +271,7 @@ class Word2Xml():
 
         # read excel
         if '請選擇' not in excelName and excelName != '':
-            self.concrete_list, self.concrete_type_list, excel_type_list = read_excel(self, excelName, self.quantityFile, self.regulationFile, num_workItemType_design)
+            self.concrete_list, self.concrete_type_list, self.excel_type_list = read_excel(self, excelName, self.quantityFile, self.regulationFile, num_workItemType_design)
             tree.write(treeName)
 
         # read drawing
@@ -242,13 +286,13 @@ class Word2Xml():
 
         # read budget
         if '請選擇' not in budget_path and excelName != '':
-            budget_type_list, self.thickness_list, self.compare_dict = read_budget(self.budgetFile, budget_path, station_code)
+            self.budget_type_list, middle_column_list = read_budget(self.budgetFile, budget_path, station_code)
             tree.write(treeName)
 
         length = 0
-        all_type_dict = {'數量計算書': excel_type_list,
+        all_type_dict = {'數量計算書': self.excel_type_list,
                          '設計圖說': drawing_type_list,
-                         '預算書': budget_type_list,
+                         '預算書': self.budget_type_list,
                          }
         
         # find longest type list as the main type list
@@ -258,26 +302,43 @@ class Word2Xml():
                 length = len(all_type_dict[t])
                 self.type_list = all_type_dict[t]
         
+        type_list = [ t for t in self.excel_type_list if '空打' not in t]
         # read word
         if '請選擇' not in wordName:
-            word_type_list, num_workItemType_design = read_word(wordName, self.designFile, self.type_list)
+            self.word_type_list, num_workItemType_design = read_word(wordName, self.designFile, type_list)
             tree.write(treeName)
     
-        print('設計計算書', word_type_list)
-        self.type_list = [t.replace('TYPE', 'Type') for t in self.type_list]
+        print('設計計算書', self.word_type_list)
+        # self.type_list = [t.replace('TYPE', 'Type') for t in self.type_list]
+
+        self.word_type_list.sort(key=lambda t: t.upper().split('TYPE')[1])
+        self.excel_type_list.sort(key=lambda t: t.upper().split('TYPE')[1])
+        self.budget_type_list.sort(key=lambda t: t.upper().split('TYPE')[1])
+        # print(self.word_type_list)
+        # print(self.excel_type_list)
+        # print(self.budget_type_list)
+        # exit()
+
+        for i in range(len(self.excel_type_list)):
+            if 'A' in self.excel_type_list[i] or '-' in self.excel_type_list[i]:
+                self.word_type_list.insert(i, '')
 
         # output csv
-        with open(output_path, 'w', encoding='BIG5', newline='') as f:
+        with open(output_path, 'w', encoding='UTF-8', newline='') as f:
             writer = csv.writer(f)
             writer.writerow(["項目", 'TYPE', "設計計算書數值", "數量計算書數值", "立面圖", "配筋圖", "平面圖", "預算書數值", "是否一致", "備註"])
             
             # main key dict
             for key in self.key_dict:
 
-                for t in self.type_list:
-                    design, quantity, drawing, budget = self.get_value(self.key_dict, key, t)
-                    compare_result = self.value_compare(self.key_dict[key], [design, drawing, quantity, budget])
-
+                for i, t in enumerate(self.type_list):
+                    design, quantity, drawing, budget = self.get_value(self.key_dict, key, t, i)
+                    
+                    try:
+                        compare_result = self.value_compare(self.key_dict[key], [design, drawing, quantity, budget], t)
+                    except:
+                        compare_result = 'N/A'
+                        
                     row = [key, f'{t}', design, quantity, drawing, budget, compare_result]
 
                     # 圖說結構一般說明
@@ -286,6 +347,7 @@ class Word2Xml():
                     elif self.key_dict[key] == 'RebarCageGroup/RebarCage/Strength':
                         row.append(f'結構一般說明: {self.rebar_strength}')
 
+                    # open list in drawing
                     new_row = []
                     for v in row:
                         if isinstance(v, list):
@@ -296,17 +358,60 @@ class Word2Xml():
                     row = new_row
 
                     # if compare_result != '':
-                    writer.writerow(row)   
+                    try:
+                        writer.writerow(row) 
+                    except:
+                        print(row)  
+            
+            for key in self.middle_key_dict:
+                schema_path = self.middle_key_dict[key]
+                m3 = self.budgetFile.find(f"./*[@TYPE='{self.budget_type_list[0]}']").find('MiddleColumnGroup')
+                # length = min(len(m), len(m3))
 
+                for i in range(len(m3)):
+                    if i == 2: i += 1
+                    m = self.quantityFile.find(f"./*[@TYPE='{self.excel_type_list[i]}']").find('MiddleColumnGroup')
+                    quantity =  m[0].find(schema_path + '/Value').text
+                    try:
+                        m2 = self.designFile.find(f"./*[@TYPE='{self.word_type_list[i]}']").find('MiddleColumnGroup')
+                        design = m2[0].find(schema_path + '/Value').text
+                    except:
+                        design = ''
+                        pass
+                    if i == 3: i -= 1
+                    budget = m3[i].find(schema_path + '/Value').text
+                    drawing = ['', '', '']
+                    try:
+                        compare_result = self.value_compare(self.middle_key_dict[key], [design, drawing, quantity, budget], t)
+                    except:
+                        compare_result = 'N/A'
+                            
+                    row = [key, middle_column_list[i], design, quantity, drawing, budget, compare_result]
+                    
+                    # open list in drawing
+                    new_row = []
+                    for v in row:
+                        if isinstance(v, list):
+                            for vv in v:
+                                new_row.append(vv)
+                        else:
+                            new_row.append(v)
+                    row = new_row
+
+                    try:
+                        writer.writerow(row) 
+                    except:
+                        print(row) 
+             
             # support, fence   
             if '請選擇' not in wordName and '請選擇' not in excelName:
                 # print(self.quantityFile[1].find('SupportGroup')[0].tag)
                 # print(self.quantityFile[1].find('SupportGroup')[0].find('Type/Value').text)
                 # print(self.quantityFile[1].find('SupportGroup')[0].get('TYPE'))
 
-                for i in range(len(self.group_array)):
+                for i in range(len(self.excel_type_list)):
                     try:
-                        type_value = self.group_array[i][0]
+                        type_value = self.excel_type_list[i]
                         # print("len(self.group_array) = " + str(len(self.group_array)))
                         # print(type_value)
                         for j in range(len(self.designFile.find(f"./*[@TYPE='{type_value}']").find('SupportGroup').findall('Support'))):
@@ -323,37 +428,43 @@ class Word2Xml():
                             except:
                                 # print(i, j)
                                 pass
-                    except:
+                    except Exception as e:
+                        # print(e)
                         pass
                 
-                for i in range(len(self.group_array)):
-                    type_value = self.group_array[i][0]
-                    # print("len(self.group_array) = " + str(len(self.group_array)))
-                    # print(type_value)
-                    for j in range(len(self.designFile.find(f"./*[@TYPE='{type_value}']").find('FenceGroup').findall('Fence'))):
-                        # print("num_sup = " + str(len(self.designFile.find(f"./*[@TYPE='{type_value}']").find('FenceGroup').findall('Fence'))))
-                        try:
-                            designSup = self.designFile[i].find('FenceGroup')[j]
-                            # quantitySup = self.quantityFile[i].find('SupportGroup')[j]
-                            quantitySup = self.quantityFile.find(f"./*[@TYPE='{type_value}']").find('FenceGroup')[j]
-                            # print('i', i, 'j', j, 'designSup: ', designSup, 'quantitySup: ', quantitySup)
-                            # print('designSup: ', designSup.find('Count/Value').text, 'quantitySup: ', quantitySup.find('Count/Value').text)
-                            writer.writerow(['圍囹層次',type_value,designSup.find('Layer/Value').text,quantitySup.find('Layer/Value').text,'','','','',float(designSup.find('Layer/Value').text)==float(quantitySup.find('Layer/Value').text)])
-                            writer.writerow(['圍囹桿件',type_value,designSup.find('Type/Value').text,quantitySup.find('Type/Value').text,'','','','',designSup.find('Type/Value').text==quantitySup.find('Type/Value').text.strip()])
-                            writer.writerow(['圍囹支數',type_value,designSup.find('Count/Value').text,quantitySup.find('Count/Value').text,'','','','',float(designSup.find('Count/Value').text)==float(quantitySup.find('Count/Value').text)])
-                        except:
-                            # print(i, j)
-                            pass
+                for i in range(len(self.excel_type_list)):
+                    try:
+                        type_value = self.excel_type_list[i]
+                        # print("len(self.group_array) = " + str(len(self.group_array)))
+                        # print(type_value)
+                        for j in range(len(self.designFile.find(f"./*[@TYPE='{type_value}']").find('FenceGroup').findall('Fence'))):
+                            # print("num_sup = " + str(len(self.designFile.find(f"./*[@TYPE='{type_value}']").find('FenceGroup').findall('Fence'))))
+                            try:
+                                designSup = self.designFile[i].find('FenceGroup')[j]
+                                # quantitySup = self.quantityFile[i].find('SupportGroup')[j]
+                                quantitySup = self.quantityFile.find(f"./*[@TYPE='{type_value}']").find('FenceGroup')[j]
+                                # print('i', i, 'j', j, 'designSup: ', designSup, 'quantitySup: ', quantitySup)
+                                # print('designSup: ', designSup.find('Count/Value').text, 'quantitySup: ', quantitySup.find('Count/Value').text)
+                                writer.writerow(['圍囹層次',type_value,designSup.find('Layer/Value').text,quantitySup.find('Layer/Value').text,'','','','',float(designSup.find('Layer/Value').text)==float(quantitySup.find('Layer/Value').text)])
+                                writer.writerow(['圍囹桿件',type_value,designSup.find('Type/Value').text,quantitySup.find('Type/Value').text,'','','','',designSup.find('Type/Value').text==quantitySup.find('Type/Value').text.strip()])
+                                writer.writerow(['圍囹支數',type_value,designSup.find('Count/Value').text,quantitySup.find('Count/Value').text,'','','','',float(designSup.find('Count/Value').text)==float(quantitySup.find('Count/Value').text)])
+                            except:
+                                # print(i, j)
+                                pass
+                    except Exception as e:
+                        # print(e)
+                        pass
                 
             # rebar
             if '請選擇' not in wordName and '請選擇' not in drawing_schema:
+            # if '請選擇' not in wordName:
                 for key in self.rebar_dict:
-                    for t in word_type_list:
+                    for t in self.word_type_list:
                         try:
                             design_rebar = self.designFile.find(f"./*[@TYPE='{t}']").find(self.rebar_dict[key])
                             design_rebar_length = len(design_rebar)
-                            drawing_rebar = ET.parse(self.drawing_schema).getroot().find(f"File/[@Description='設計圖說']/Drawing[@Description='配筋圖']/WorkItemType[@Description='{t.replace('Type', 'TYPE')}']/{self.rebar_dict[key].replace('RebarGroup/', '')}")
-                            drawing_rebar_length = len(drawing_rebar)
+                            # drawing_rebar = ET.parse(self.drawing_schema).getroot().find(f"File/[@Description='設計圖說']/Drawing[@Description='配筋圖']/WorkItemType[@Description='{t.replace('Type', 'TYPE')}']/{self.rebar_dict[key].replace('RebarGroup/', '')}")
+                            drawing_rebar_length = 0
                             for i in range(max(design_rebar_length, drawing_rebar_length)):
                                 for item_key in self.rebar_item_dict:
                                     item = self.rebar_item_dict[item_key]
@@ -366,17 +477,20 @@ class Word2Xml():
                                     except:
                                         design = ''
 
-                                    try:
-                                        if 'DepthStart' in item:
-                                            item = 'StartDepth'
-                                        elif 'DepthEnd' in item:
-                                            item = 'EndDepth'
+                                    # try:
+                                    #     if 'DepthStart' in item:
+                                    #         item = 'StartDepth'
+                                    #     elif 'DepthEnd' in item:
+                                    #         item = 'EndDepth'
                                         
-                                        drawing = drawing_rebar[i].find(f'{item}/Value').text
-                                    except:
-                                        drawing = ''
+                                    #     drawing = drawing_rebar[i].find(f'{item}/Value').text
+                                    # except:
+                                    #     drawing = ''
 
-                                    compare_result = self.value_compare(self.rebar_dict[key], [design, drawing]) 
+                                    drawing = ''
+                                    print(design)
+
+                                    compare_result = self.value_compare(self.rebar_dict[key], [design, drawing], t) 
                                     
                                     row = [key + item_key, f'{t}', design, '', '', drawing, '', '', compare_result]     
                                     new_row = []
@@ -391,7 +505,7 @@ class Word2Xml():
                                     # if compare_result != '':
                                     writer.writerow(row)
                         except Exception as e:
-                            # print(e)
+                            print(e)
                             pass
         
         # regulation check

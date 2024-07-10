@@ -167,6 +167,8 @@ def compare2():
     budget_path = budget_path_select2.file_path
     output_path = output_path_select2.file_path
     threshold = float(threshold_textbox2.value)
+    waste = float(waste_textbox.value)
+    waste2 = float(waste_textbox2.value)
     station_code = station_code_textbox2.value
 
     if '請選擇' in schemaName:
@@ -195,6 +197,8 @@ def compare2():
         budget_path=budget_path,
         output_path=output_path,
         threshold=threshold,
+        waste=waste,
+        waste2=waste2,
         station_code=station_code,
         )
 
@@ -253,11 +257,17 @@ output_path_select2.grid(row=5, pady=2)
 threshold_textbox2 = valueTextbox(tab2, '誤差區間（±）', 0.01)
 threshold_textbox2.grid(row=6, pady=2)
 
+waste_textbox = valueTextbox(tab2, '混凝土耗損量', 1.08)
+waste_textbox.grid(row=7, pady=2)
+
+waste_textbox2 = valueTextbox(tab2, '鋼筋耗損量', 1.08)
+waste_textbox2.grid(row=8, pady=2)
+
 station_code_textbox2 = valueTextbox(tab2, '車站編碼（例如：LG09）', 'LG09')
-station_code_textbox2.grid(row=7, pady=2)
+station_code_textbox2.grid(row=9, pady=2)
 
 compare_button2= tk.Button(tab2, text="文件比對", command=compare2)
-compare_button2.grid(row=8, pady=10, ipadx=50)
+compare_button2.grid(row=10, pady=10, ipadx=50)
 
 word2Xml1 = Word2Xml()
 word2Xml2 = Word2Xml()
